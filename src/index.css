@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium whitespace-nowrap transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white shadow-sm hover:bg-blue-700;
+  }
+
+  .btn-secondary {
+    @apply border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .btn-soft {
+    @apply bg-blue-50 text-blue-700 hover:bg-blue-100;
+  }
+
+  .btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-700;
+  }
+
+  .btn-danger-soft {
+    @apply text-rose-600 hover:bg-rose-50;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none disabled:bg-slate-50 disabled:opacity-60;
+  }
+
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .card-header {
+    @apply flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4;
+  }
+
+  .card-title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+
+  .card-subtitle {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
+
+  .field-label {
+    @apply block text-xs font-medium text-slate-600;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-slate-200/70 ring-inset;
+  }
+
+  .table-head {
+    @apply bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase;
+  }
+
+  .table-th {
+    @apply px-5 py-3 text-left;
+  }
+
+  .table-td {
+    @apply px-5 py-3.5 align-middle text-sm text-slate-700;
+  }
+}
