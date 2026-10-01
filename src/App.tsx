@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import StaffDashboard from './pages/staff/StaffDashboard'
-import ResidentDashboard from './pages/residents/ResidentDashboard'
+import AdminLayout from './pages/admin/AdminLayout'
+import OverviewPage from './pages/admin/OverviewPage'
+import UsersPage from './pages/admin/UsersPage'
+import RequestsPage from './pages/admin/RequestsPage'
+import CommunityManagement from './pages/admin/CommunityManagement'
+import ReportsPage from './pages/admin/ReportsPage'
+import NotificationsPage from './pages/admin/NotificationsPage'
+import ProfilePage from './pages/admin/ProfilePage'
+import StaffLayout from './pages/staff/StaffLayout'
+import StaffRequestsPage from './pages/staff/StaffRequestsPage'
+import CommunityReview from './pages/staff/CommunityReview'
+import ResidentLayout from './pages/residents/ResidentLayout'
+import ResidentRequestsPage from './pages/residents/ResidentRequestsPage'
+import CommunityServices from './pages/residents/CommunityServices'
 import { apiRequest } from './shared/api'
+import { SessionContext, homePath, useSession } from './shared/session-context'
+import type { AuthSession } from './shared/session-context'
 import type { PortalUser, Role } from './shared/types'
 
-type AuthSession = { token: string; user: PortalUser }
 type LoginResponse = { token: string; user: PortalUser }
 
 const SESSION_KEY = 'bscp-auth-session'
@@ -23,6 +36,32 @@ function readStoredSession(): AuthSession | null {
     sessionStorage.removeItem(SESSION_KEY)
     return null
   }
+}
+
+function RequireAuth({ role }: { role: Role }) {
+  const { session } = useSession()
+  if (session.user.role !== role) return <Navigate to="/" replace />
+  return <Outlet />
+}
+
+function RoleHome() {
+  const { session } = useSession()
+  return <Navigate to={homePath(session.user.role)} replace />
+}
+
+function CommunityManagementRoute() {
+  const { session } = useSession()
+  return <CommunityManagement token={session.token} />
+}
+
+function CommunityReviewRoute() {
+  const { session } = useSession()
+  return <CommunityReview token={session.token} />
+}
+
+function CommunityServicesRoute() {
+  const { session } = useSession()
+  return <CommunityServices user={session.user} token={session.token} />
 }
 
 function App() {
@@ -62,6 +101,10 @@ function App() {
       body: { email, password },
     })
 
+    if (!result?.user || !result.token) {
+      throw new Error('The server returned an unexpected login response. Please try again.')
+    }
+
     if (!isPortalRole(result.user.role)) {
       await apiRequest('/auth/logout', { method: 'POST', token: result.token }).catch(() => undefined)
       throw new Error('This account does not have a recognized portal role. Contact your administrator.')
@@ -90,18 +133,54 @@ function App() {
   }
 
   if (!session) {
-    return <LoginPage onLogin={handleLogin} />
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    )
   }
 
-  if (session.user.role === 'admin') {
-    return <AdminDashboard user={session.user} token={session.token} onLogout={handleLogout} />
-  }
+  return (
+    <SessionContext.Provider value={{ session, onLogout: handleLogout }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RoleHome />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
 
-  if (session.user.role === 'staff') {
-    return <StaffDashboard user={session.user} token={session.token} onLogout={handleLogout} />
-  }
+          <Route element={<RequireAuth role="admin" />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<OverviewPage />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="requests" element={<RequestsPage />} />
+              <Route path="community" element={<CommunityManagementRoute />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
+          </Route>
 
-  return <ResidentDashboard user={session.user} token={session.token} onLogout={handleLogout} />
+          <Route element={<RequireAuth role="staff" />}>
+            <Route path="/staff" element={<StaffLayout />}>
+              <Route index element={<StaffRequestsPage />} />
+              <Route path="community" element={<CommunityReviewRoute />} />
+            </Route>
+          </Route>
+
+          <Route element={<RequireAuth role="resident" />}>
+            <Route path="/resident" element={<ResidentLayout />}>
+              <Route index element={<ResidentRequestsPage />} />
+              <Route path="services" element={<CommunityServicesRoute />} />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </SessionContext.Provider>
+  )
 }
 
 export default App
