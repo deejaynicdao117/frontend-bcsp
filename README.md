@@ -1,79 +1,54 @@
-# React + TypeScript + Vite
+# frontend-bscp — Portal UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite + Tailwind CSS 4 front end for the Barangay Citizen Services Portal.
 
-Currently, two official plugins are available:
+Full clone-and-run steps live in the [root README](../README.md) — you need the backend running first.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Commands
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install        # once
+npm run dev        # dev server → http://localhost:5173
+npm run lint       # ESLint
+npm run build      # type-check (tsc) + production build to dist/
+npm run preview    # serve the production build (also proxies /api)
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Configuration (`.env`)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Copy `.env.example` to `.env` if you need to change anything, then restart `npm run dev`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VITE_API_PROXY` | `http://127.0.0.1:8000` | Where Vite forwards `/api` requests (server-side). Keep it on `localhost`. |
+| `VITE_API_URL` | *(unset → `/api`)* | Absolute API base for the built app. Only set this to call the API directly. |
+
+The browser always calls same-origin `/api`, so the app works on `localhost`, a LAN IP, or an HTTPS dev tunnel without CORS or mixed-content errors.
+
+## Structure
 
 ```
-# frontend-bcsp
+src/
+  App.tsx                    # session handling + all react-router routes
+  shared/                    # api client, types, session context, helpers
+  components/
+    ui.tsx                   # Card, Alert, badges, spinner, page header
+    admin/                   # sidebar, stat card, request table
+    shared/RoleHeader.tsx    # header used by staff & resident layouts
+  pages/
+    LoginPage.tsx
+    admin/                   # AdminLayout + overview/users/requests/community/reports/notifications/profile
+    staff/                   # StaffLayout + document requests + community review
+    residents/               # ResidentLayout + document requests + community services
+```
+
+## Routes
+
+| URL | Page |
+| --- | --- |
+| `/login` | Sign in |
+| `/admin`, `/admin/users`, `/admin/requests`, `/admin/community`, `/admin/reports`, `/admin/notifications`, `/admin/profile` | Admin workspace |
+| `/staff`, `/staff/community` | Staff workspace |
+| `/resident`, `/resident/services` | Resident workspace |
+
+Role guards live in `src/App.tsx`; a wrong role or unknown URL redirects home.

@@ -42,7 +42,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </span>
             <div>
               <p className="text-sm font-semibold text-slate-900">Barangay Citizen Services Portal</p>
-              <p className="text-xs text-slate-500">Resident, staff and admin workspace</p>
             </div>
           </div>
 
@@ -50,7 +49,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <p className="text-xs font-semibold tracking-wider text-blue-600 uppercase">Hello, Kabarangay!</p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Welcome back</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Sign in with your account. Your role is detected automatically and the right workspace opens for you.
+              Sign in with your account. 
             </p>
           </div>
 
