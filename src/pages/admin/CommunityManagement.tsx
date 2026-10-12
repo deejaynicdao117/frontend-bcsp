@@ -2,17 +2,80 @@ import { useCallback, useEffect, useState } from 'react'
 import { Activity, Megaphone, MapPinned, Phone, Settings2, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Alert, Card, PageHeader } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
+import { adminCommunityApi } from '../../shared/api'
 
-type Envelope<T> = { data: T }
-type Announcement = { id: number; title: string; body: string; type: string; severity: string; status: string; location: string | null }
-type Contact = { id: number; name: string; office: string | null; phone: string; availability: string; is_active: boolean }
-type Center = { id: number; name: string; address: string; purok: string | null; capacity: number | null; current_occupancy: number; status: string }
-type Household = { id: number; household_code: string; address: string; purok: string; verification_status: string; head?: { name: string } }
-type Complaint = { id: number; reference_number: string; subject: string; ai_recommended_category: string; ai_recommended_priority: string; final_category: string | null; final_priority: string | null; status: string; possible_duplicate: boolean }
-type Aid = { id: number; reference_number: string; incident_type: string; location: string; status: string; priority: string }
-type ActivityItem = { id: number; action: string; created_at: string; actor?: { name: string } | null; metadata: Record<string, unknown> | null }
-type Setting = { key: string; value: string | null; group: string }
+type Announcement = {
+  id: number
+  title: string
+  body: string
+  type: string
+  severity: string
+  status: string
+  location: string | null
+}
+
+type Contact = {
+  id: number
+  name: string
+  office: string | null
+  phone: string
+  availability: string
+  is_active: boolean
+}
+
+type Center = {
+  id: number
+  name: string
+  address: string
+  purok: string | null
+  capacity: number | null
+  current_occupancy: number
+  status: string
+}
+
+type Household = {
+  id: number
+  household_code: string
+  address: string
+  purok: string
+  verification_status: string
+  head?: { name: string }
+}
+
+type Complaint = {
+  id: number
+  reference_number: string
+  subject: string
+  ai_recommended_category: string
+  ai_recommended_priority: string
+  final_category: string | null
+  final_priority: string | null
+  status: string
+  possible_duplicate: boolean
+}
+
+type Aid = {
+  id: number
+  reference_number: string
+  incident_type: string
+  location: string
+  status: string
+  priority: string
+}
+
+type ActivityItem = {
+  id: number
+  action: string
+  created_at: string
+  actor?: { name: string } | null
+  metadata: Record<string, unknown> | null
+}
+
+type Setting = {
+  key: string
+  value: string | null
+  group: string
+}
 
 type CommunityData = {
   announcements: Announcement[]
@@ -25,20 +88,29 @@ type CommunityData = {
   settings: Setting[]
 }
 
-async function fetchCommunityData(token: string): Promise<CommunityData> {
-  const [ann, contactsResult, centersResult, householdResult, complaintResult, aidResult, logResult, settingsResult] = await Promise.all([
-    apiRequest<Envelope<Announcement[]>>('/admin/announcements', { token }),
-    apiRequest<Envelope<Contact[]>>('/admin/emergency-contacts', { token }),
-    apiRequest<Envelope<Center[]>>('/admin/evacuation-centers', { token }),
-    apiRequest<Envelope<Household[]>>('/admin/households', { token }),
-    apiRequest<Envelope<Complaint[]>>('/admin/complaints', { token }),
-    apiRequest<Envelope<Aid[]>>('/admin/disaster-assistance', { token }),
-    apiRequest<Envelope<ActivityItem[]>>('/admin/activity-logs', { token }),
-    apiRequest<Envelope<Setting[]>>('/admin/settings', { token }),
+async function fetchCommunityData(): Promise<CommunityData> {
+  const [
+    announcementResult,
+    contactsResult,
+    centersResult,
+    householdResult,
+    complaintResult,
+    aidResult,
+    logResult,
+    settingsResult,
+  ] = await Promise.all([
+    adminCommunityApi.getAnnouncements<Announcement>(),
+    adminCommunityApi.getEmergencyContacts<Contact>(),
+    adminCommunityApi.getEvacuationCenters<Center>(),
+    adminCommunityApi.getHouseholds<Household>(),
+    adminCommunityApi.getComplaints<Complaint>(),
+    adminCommunityApi.getAssistanceRequests<Aid>(),
+    adminCommunityApi.getActivityLogs<ActivityItem>(),
+    adminCommunityApi.getSettings<Setting>(),
   ])
 
   return {
-    announcements: ann.data,
+    announcements: announcementResult.data,
     contacts: contactsResult.data,
     centers: centersResult.data,
     households: householdResult.data,
@@ -49,7 +121,12 @@ async function fetchCommunityData(token: string): Promise<CommunityData> {
   }
 }
 
-function Panel({ title, icon: Icon, children, footer }: { title: string; icon: LucideIcon; children: React.ReactNode; footer?: React.ReactNode }) {
+function Panel({ title, icon: Icon, children, footer }: {
+  title: string
+  icon: LucideIcon
+  children: React.ReactNode
+  footer?: React.ReactNode
+}) {
   return (
     <Card>
       <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
@@ -64,12 +141,18 @@ function Panel({ title, icon: Icon, children, footer }: { title: string; icon: L
   )
 }
 
-function Rows({ items, empty }: { items: React.ReactNode[]; empty: string }) {
-  if (items.length === 0) return <p className="px-5 py-8 text-center text-sm text-slate-400">{empty}</p>
+function Rows({ items, empty }: {
+  items: React.ReactNode[]
+  empty: string
+}) {
+  if (items.length === 0) {
+    return <p className="px-5 py-8 text-center text-sm text-slate-400">{empty}</p>
+  }
+
   return <div className="divide-y divide-slate-100">{items}</div>
 }
 
-export default function CommunityManagement({ token }: { token: string }) {
+export default function CommunityManagement() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [centers, setCenters] = useState<Center[]>([])
@@ -94,29 +177,31 @@ export default function CommunityManagement({ token }: { token: string }) {
   }, [])
 
   async function load() {
-    applyCommunityData(await fetchCommunityData(token))
+    applyCommunityData(await fetchCommunityData())
   }
 
   useEffect(() => {
     let active = true
-    fetchCommunityData(token)
+    fetchCommunityData()
       .then((data) => { if (active) applyCommunityData(data) })
       .catch((loadError: unknown) => {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load admin community data.')
       })
     return () => { active = false }
-  }, [applyCommunityData, token])
+  }, [applyCommunityData])
 
-  async function submit(path: string, method: 'POST' | 'PUT' | 'DELETE', body: object | undefined, successText: string) {
+  async function submit(action: () => Promise<unknown>, successText: string): Promise<boolean> {
     setBusy(true)
     setError('')
     setMessage('')
     try {
-      await apiRequest(path, { token, method, body })
+      await action()
       await load()
       setMessage(successText)
+      return true
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Request failed.')
+      return false
     } finally {
       setBusy(false)
     }
@@ -125,49 +210,53 @@ export default function CommunityManagement({ token }: { token: string }) {
   function createAnnouncement(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    void submit('/admin/announcements', 'POST', {
+    void submit(() => adminCommunityApi.createAnnouncement({
       title: form.get('title'),
       body: form.get('body'),
       type: form.get('type'),
       severity: form.get('severity'),
       status: form.get('status'),
       location: form.get('location'),
-    }, 'Advisory saved.')
+    }), 'Advisory saved.')
   }
 
-  function createContact(event: React.FormEvent<HTMLFormElement>) {
+  async function createContact(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    void submit('/admin/emergency-contacts', 'POST', {
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    const saved = await submit(() => adminCommunityApi.createEmergencyContact({
       name: form.get('name'),
       office: form.get('office'),
       phone: form.get('phone'),
       availability: form.get('availability'),
-    }, 'Emergency contact added.')
-    event.currentTarget.reset()
+    }), 'Emergency contact added.')
+
+    if (saved) formElement.reset()
   }
 
-  function createCenter(event: React.FormEvent<HTMLFormElement>) {
+  async function createCenter(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    void submit('/admin/evacuation-centers', 'POST', {
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    const saved = await submit(() => adminCommunityApi.createEvacuationCenter({
       name: form.get('name'),
       address: form.get('address'),
       purok: form.get('purok'),
       capacity: Number(form.get('capacity') || 0),
       status: form.get('status'),
-    }, 'Evacuation center saved.')
-    event.currentTarget.reset()
+    }), 'Evacuation center saved.')
+
+    if (saved) formElement.reset()
   }
 
   function saveSetting(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    void submit('/admin/settings', 'PUT', {
+    void submit(() => adminCommunityApi.saveSetting({
       key: form.get('key'),
       value: form.get('value'),
       group: form.get('group'),
-    }, 'Setting saved.')
+    }), 'Setting saved.')
   }
 
   return (
@@ -220,13 +309,13 @@ export default function CommunityManagement({ token }: { token: string }) {
                 </div>
                 <button
                   disabled={busy}
-                  onClick={() => submit(`/admin/announcements/${item.id}`, 'PUT', {
+                  onClick={() => submit(() => adminCommunityApi.updateAnnouncement(item.id, {
                     title: item.title,
                     body: item.body,
                     type: item.type,
                     severity: item.severity,
                     status: item.status === 'published' ? 'archived' : 'published',
-                  }, 'Advisory status updated.')}
+                  }), 'Advisory status updated.')}
                   className="btn btn-soft btn-sm shrink-0"
                 >
                   {item.status === 'published' ? 'Archive' : 'Publish'}
@@ -254,7 +343,10 @@ export default function CommunityManagement({ token }: { token: string }) {
                 </div>
                 <button
                   disabled={busy}
-                  onClick={() => submit(`/admin/emergency-contacts/${item.id}`, 'DELETE', undefined, 'Emergency contact removed.')}
+                  onClick={() => submit(
+                    () => adminCommunityApi.deleteEmergencyContact(item.id),
+                    'Emergency contact removed.',
+                  )}
                   className="btn btn-danger-soft btn-sm shrink-0"
                 >
                   Delete
@@ -289,7 +381,10 @@ export default function CommunityManagement({ token }: { token: string }) {
                 </div>
                 <button
                   disabled={busy}
-                  onClick={() => submit(`/admin/evacuation-centers/${item.id}`, 'DELETE', undefined, 'Evacuation center removed.')}
+                  onClick={() => submit(
+                    () => adminCommunityApi.deleteEvacuationCenter(item.id),
+                    'Evacuation center removed.',
+                  )}
                   className="btn btn-danger-soft btn-sm shrink-0"
                 >
                   Delete

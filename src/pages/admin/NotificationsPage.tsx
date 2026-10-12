@@ -1,30 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
 import { Alert, Card, EmptyState, PageHeader, Spinner, StatusBadge } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
-import { useSession } from '../../shared/session-context'
+import { getAdminNotifications } from '../../shared/api'
 import { formatDate } from '../../shared/format'
-import type { ListResponse, PortalNotification } from '../../shared/types'
 
 export default function NotificationsPage() {
-  const { session } = useSession()
-  const [notifications, setNotifications] = useState<PortalNotification[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const notificationsQuery = useQuery({
+    queryKey: ['admin', 'notifications'],
+    queryFn: getAdminNotifications,
+  })
 
-  useEffect(() => {
-    let active = true
-    apiRequest<ListResponse<PortalNotification>>('/admin/notifications', { token: session.token })
-      .then((result) => { if (active) setNotifications(result.data) })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load notifications.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [session.token])
+  if (notificationsQuery.isPending) return <Spinner label="Loading notifications…" />
+  if (notificationsQuery.error) {
+    const message = notificationsQuery.error instanceof Error
+      ? notificationsQuery.error.message
+      : 'Unable to load notifications.'
 
-  if (loading) return <Spinner label="Loading notifications…" />
-  if (error) return <Alert tone="error">{error}</Alert>
+    return <Alert tone="error">{message}</Alert>
+  }
+
+  const notifications = notificationsQuery.data.data
 
   return (
     <div className="space-y-6">

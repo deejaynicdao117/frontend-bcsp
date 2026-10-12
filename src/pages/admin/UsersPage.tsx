@@ -1,50 +1,74 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Plus, Search, ShieldCheck } from 'lucide-react'
 import { Alert, Card, EmptyState, PageHeader, Spinner } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
+import {
+  createAdminUser,
+  deleteAdminUser,
+  getAdminUsers,
+  updateAdminUser,
+} from '../../shared/api'
 import { useSession } from '../../shared/session-context'
-import type { DataResponse, ListResponse, PortalUser, Role } from '../../shared/types'
+import type { PortalUser, Role } from '../../shared/types'
 
-type NewUser = { name: string; email: string; password: string; role: Role }
+type NewUser = {
+  name: string
+  email: string
+  password: string
+  role: Role
+}
 
 const roleOptions: Role[] = ['admin', 'staff', 'resident']
+const emptyUsers: PortalUser[] = []
 
 export default function UsersPage() {
   const { session } = useSession()
-  const token = session.token
-  const [users, setUsers] = useState<PortalUser[]>([])
+  const queryClient = useQueryClient()
+  const usersQuery = useQuery({
+    queryKey: ['admin', 'users'],
+    queryFn: getAdminUsers,
+  })
+  const users = usersQuery.data?.data ?? emptyUsers
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newUser, setNewUser] = useState<NewUser>({ name: '', email: '', password: '', role: 'resident' })
-  const [loading, setLoading] = useState(true)
+  const [newUser, setNewUser] = useState<NewUser>({
+    name: '',
+    email: '',
+    password: '',
+    role: 'resident',
+  })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const applyUsers = useCallback((list: PortalUser[]) => setUsers(list), [])
-
-  useEffect(() => {
-    let active = true
-    apiRequest<ListResponse<PortalUser>>('/admin/users', { token })
-      .then((result) => { if (active) applyUsers(result.data) })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load portal accounts.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [applyUsers, token])
+  const createUserMutation = useMutation({
+    mutationFn: createAdminUser,
+  })
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }: {
+      id: number
+      data: Pick<PortalUser, 'name' | 'email' | 'role'>
+    }) => updateAdminUser(id, data),
+  })
+  const deleteUserMutation = useMutation({
+    mutationFn: deleteAdminUser,
+  })
 
   async function reloadUsers() {
-    const result = await apiRequest<ListResponse<PortalUser>>('/admin/users', { token })
-    applyUsers(result.data)
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
   }
 
-  const filteredUsers = useMemo(() => users.filter((item) => {
-    const query = search.toLowerCase()
-    return (roleFilter === 'all' || item.role === roleFilter)
-      && (`${item.name} ${item.email}`.toLowerCase().includes(query))
-  }), [users, search, roleFilter])
+  const filteredUsers = useMemo(
+    () => users.filter((item) => {
+      const query = search.toLowerCase()
+      const matchesRole = roleFilter === 'all' || item.role === roleFilter
+      const matchesSearch = `${item.name} ${item.email}`.toLowerCase().includes(query)
+
+      return matchesRole && matchesSearch
+    }),
+    [users, search, roleFilter],
+  )
 
   async function createUser(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,7 +76,7 @@ export default function UsersPage() {
     setError('')
     setSuccess('')
     try {
-      await apiRequest('/admin/users', { token, method: 'POST', body: newUser })
+      await createUserMutation.mutateAsync(newUser)
       setNewUser({ name: '', email: '', password: '', role: 'resident' })
       setShowCreateForm(false)
       await reloadUsers()
@@ -69,12 +93,25 @@ export default function UsersPage() {
     setError('')
     setSuccess('')
     try {
-      const result = await apiRequest<DataResponse<PortalUser>>(`/admin/users/${updatedUser.id}`, {
-        token,
-        method: 'PUT',
-        body: { name: updatedUser.name, email: updatedUser.email, role: updatedUser.role },
+      const result = await updateUserMutation.mutateAsync({
+        id: updatedUser.id,
+        data: {
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+        },
       })
-      setUsers((current) => current.map((item) => item.id === result.data.id ? result.data : item))
+      queryClient.setQueryData(
+        ['admin', 'users'],
+        (current: { data: PortalUser[] } | undefined) => current
+          ? {
+              ...current,
+              data: current.data.map((item) => (
+                item.id === result.data.id ? result.data : item
+              )),
+            }
+          : current,
+      )
       setSuccess(`${result.data.name}'s account was updated.`)
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : 'Could not update account.')
@@ -84,16 +121,31 @@ export default function UsersPage() {
   }
 
   function updateUserDraft(updatedUser: PortalUser) {
-    setUsers((current) => current.map((item) => item.id === updatedUser.id ? updatedUser : item))
+    queryClient.setQueryData(
+      ['admin', 'users'],
+      (current: { data: PortalUser[] } | undefined) => current
+        ? {
+            ...current,
+            data: current.data.map((item) => (
+              item.id === updatedUser.id ? updatedUser : item
+            )),
+          }
+        : current,
+    )
   }
 
   async function deleteUser(target: PortalUser) {
-    if (target.id === session.user.id || !window.confirm(`Delete the account for ${target.name}? This cannot be undone.`)) return
+    if (
+      target.id === session.user.id
+      || !window.confirm(`Delete the account for ${target.name}? This cannot be undone.`)
+    ) {
+      return
+    }
     setBusy(true)
     setError('')
     setSuccess('')
     try {
-      await apiRequest(`/admin/users/${target.id}`, { token, method: 'DELETE' })
+      await deleteUserMutation.mutateAsync(target.id)
       await reloadUsers()
       setSuccess(`${target.name}'s account was deleted.`)
     } catch (actionError) {
@@ -103,13 +155,15 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <Spinner label="Loading portal accounts…" />
+  if (usersQuery.isPending) return <Spinner label="Loading portal accounts…" />
+
+  const loadError = usersQuery.error instanceof Error ? usersQuery.error.message : ''
 
   return (
     <div className="space-y-6">
-      {(error || success) && (
-        <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setSuccess('') }}>
-          {error || success}
+      {(error || loadError || success) && (
+        <Alert tone={error || loadError ? 'error' : 'success'} onDismiss={() => { setError(''); setSuccess('') }}>
+          {error || loadError || success}
         </Alert>
       )}
 
@@ -137,19 +191,41 @@ export default function UsersPage() {
           <form onSubmit={createUser} className="grid gap-4 p-5 sm:grid-cols-2">
             <label className="field-label">
               Full name
-              <input required className="input mt-1.5" value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} />
+              <input
+                required
+                className="input mt-1.5"
+                value={newUser.name}
+                onChange={(event) => setNewUser({ ...newUser, name: event.target.value })}
+              />
             </label>
             <label className="field-label">
               Email address
-              <input required type="email" className="input mt-1.5" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} />
+              <input
+                required
+                type="email"
+                className="input mt-1.5"
+                value={newUser.email}
+                onChange={(event) => setNewUser({ ...newUser, email: event.target.value })}
+              />
             </label>
             <label className="field-label">
               Temporary password
-              <input required minLength={8} type="password" className="input mt-1.5" value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} />
+              <input
+                required
+                minLength={8}
+                type="password"
+                className="input mt-1.5"
+                value={newUser.password}
+                onChange={(event) => setNewUser({ ...newUser, password: event.target.value })}
+              />
             </label>
             <label className="field-label">
               Role
-              <select className="input mt-1.5" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as Role })}>
+              <select
+                className="input mt-1.5"
+                value={newUser.role}
+                onChange={(event) => setNewUser({ ...newUser, role: event.target.value as Role })}
+              >
                 {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
               </select>
             </label>
@@ -173,7 +249,12 @@ export default function UsersPage() {
               className="input pl-9"
             />
           </label>
-          <select aria-label="Filter users by role" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} className="input sm:w-44">
+          <select
+            aria-label="Filter users by role"
+            value={roleFilter}
+            onChange={(event) => setRoleFilter(event.target.value)}
+            className="input sm:w-44"
+          >
             <option value="all">All roles</option>
             {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
           </select>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowRight, Building2, FileText, LineChart, ShieldCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 type LoginPageProps = {
   onLogin: (email: string, password: string) => Promise<void>
@@ -91,6 +92,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               {!isSubmitting && <ArrowRight size={16} />}
             </button>
           </form>
+
+          <p className="mt-5 text-center text-sm text-slate-500">
+            New resident?{' '}
+            <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-800">
+              Create an account
+            </Link>
+          </p>
 
           <p className="mt-8 flex items-center gap-1.5 text-xs text-slate-400">
             <ShieldCheck size={14} />

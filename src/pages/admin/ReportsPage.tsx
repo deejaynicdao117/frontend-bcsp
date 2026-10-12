@@ -1,31 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { FileCheck2, FileClock, FileText } from 'lucide-react'
 import { Alert, Card, PageHeader, Spinner } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
-import { useSession } from '../../shared/session-context'
-import type { DataResponse, ReportsData } from '../../shared/types'
-
-const blankReports: ReportsData = { requests_by_status: [], monthly_requests: [], total_requests: 0 }
+import { getAdminReports } from '../../shared/api'
 
 export default function ReportsPage() {
-  const { session } = useSession()
-  const [reports, setReports] = useState<ReportsData>(blankReports)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const reportsQuery = useQuery({
+    queryKey: ['admin', 'reports'],
+    queryFn: getAdminReports,
+  })
 
-  useEffect(() => {
-    let active = true
-    apiRequest<DataResponse<ReportsData>>('/admin/reports', { token: session.token })
-      .then((result) => { if (active) setReports(result.data) })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load reports.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [session.token])
+  if (reportsQuery.isPending) return <Spinner label="Loading reports…" />
+  if (reportsQuery.error) {
+    const message = reportsQuery.error instanceof Error
+      ? reportsQuery.error.message
+      : 'Unable to load reports.'
 
-  if (loading) return <Spinner label="Loading reports…" />
-  if (error) return <Alert tone="error">{error}</Alert>
+    return <Alert tone="error">{message}</Alert>
+  }
+
+  const reports = reportsQuery.data.data
 
   const maxStatus = Math.max(1, ...reports.requests_by_status.map((item) => item.total))
   const maxMonth = Math.max(1, ...reports.monthly_requests.map((item) => item.total))

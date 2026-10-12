@@ -1,40 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import RequestTable from '../../components/admin/RequestTable'
 import { Alert, Card, PageHeader, Spinner } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
-import { useSession } from '../../shared/session-context'
-import type { DocumentRequest, ListResponse } from '../../shared/types'
+import { getAdminDocumentRequests } from '../../shared/api'
 
 const requestStatuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_release', 'completed']
 
 export default function RequestsPage() {
-  const { session } = useSession()
-  const [requests, setRequests] = useState<DocumentRequest[]>([])
+  const requestsQuery = useQuery({
+    queryKey: ['admin', 'document-requests'],
+    queryFn: getAdminDocumentRequests,
+  })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    let active = true
-    apiRequest<ListResponse<DocumentRequest>>('/admin/document-requests', { token: session.token })
-      .then((result) => { if (active) setRequests(result.data) })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load document requests.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [session.token])
-
-  const filteredRequests = useMemo(() => requests.filter((item) => {
+  const filteredRequests = useMemo(() => {
+    const requests = requestsQuery.data?.data ?? []
     const query = search.toLowerCase()
-    return (statusFilter === 'all' || item.status === statusFilter)
-      && (`${item.tracking_number} ${item.user?.name ?? ''} ${item.document_type?.name ?? ''}`.toLowerCase().includes(query))
-  }), [requests, search, statusFilter])
 
-  if (loading) return <Spinner label="Loading document requests…" />
-  if (error) return <Alert tone="error">{error}</Alert>
+    return requests.filter((item) => {
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter
+      const searchText = `${item.tracking_number} ${item.user?.name ?? ''} ${item.document_type?.name ?? ''}`
+        .toLowerCase()
+
+      return matchesStatus && searchText.includes(query)
+    })
+  }, [requestsQuery.data, search, statusFilter])
+
+  if (requestsQuery.isPending) return <Spinner label="Loading document requests…" />
+  if (requestsQuery.error) {
+    const message = requestsQuery.error instanceof Error
+      ? requestsQuery.error.message
+      : 'Unable to load document requests.'
+
+    return <Alert tone="error">{message}</Alert>
+  }
 
   return (
     <div className="space-y-6">

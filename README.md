@@ -29,7 +29,8 @@ The browser always calls same-origin `/api`, so the app works on `localhost`, a 
 
 ```
 src/
-  App.tsx                    # session handling + all react-router routes
+  App.tsx                    # session handling
+  routes/AppRoutes.tsx       # role-protected React Router pages
   shared/                    # api client, types, session context, helpers
   components/
     ui.tsx                   # Card, Alert, badges, spinner, page header
@@ -37,6 +38,7 @@ src/
     shared/RoleHeader.tsx    # header used by staff & resident layouts
   pages/
     LoginPage.tsx
+    RegisterPage.tsx         # resident-only sign-up + email code verification
     admin/                   # AdminLayout + overview/users/requests/community/reports/notifications/profile
     staff/                   # StaffLayout + document requests + community review
     residents/               # ResidentLayout + document requests + community services
