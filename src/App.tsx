@@ -1,85 +1,96 @@
 import { useEffect, useState } from 'react'
-import LoginPage from './pages/LoginPage'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import StaffDashboard from './pages/staff/StaffDashboard'
-import ResidentDashboard from './pages/residents/ResidentDashboard'
-import { apiRequest } from './shared/api'
-import type { PortalUser, Role } from './shared/types'
-
-type AuthSession = { token: string; user: PortalUser }
-type LoginResponse = { token: string; user: PortalUser }
-
-const SESSION_KEY = 'bscp-auth-session'
+import { useQueryClient } from '@tanstack/react-query'
+import { BrowserRouter } from 'react-router-dom'
+import AppRoutes from './routes/AppRoutes'
+import { getCurrentUser, login, logout } from './shared/api'
+import { SessionContext } from './shared/session-context'
+import type { AuthSession } from './shared/session-context'
+import type { Role } from './shared/types'
+import {
+  clearSession,
+  readStoredSession,
+  saveSession,
+  SESSION_STORAGE_KEY,
+} from './shared/session-storage'
 
 function isPortalRole(role: string): role is Role {
   return role === 'admin' || role === 'staff' || role === 'resident'
 }
 
-function readStoredSession(): AuthSession | null {
-  try {
-    const value = sessionStorage.getItem(SESSION_KEY)
-    return value ? JSON.parse(value) as AuthSession : null
-  } catch {
-    sessionStorage.removeItem(SESSION_KEY)
-    return null
-  }
-}
-
 function App() {
+  const queryClient = useQueryClient()
   const [session, setSession] = useState<AuthSession | null>(readStoredSession)
-  const [checkingSession, setCheckingSession] = useState(Boolean(sessionStorage.getItem(SESSION_KEY)))
+  const [checkingSession, setCheckingSession] = useState(
+    Boolean(sessionStorage.getItem(SESSION_STORAGE_KEY)),
+  )
 
   useEffect(() => {
     const token = session?.token
     if (!token) return
 
     let active = true
-    apiRequest<{ user: PortalUser }>('/auth/me', { token })
+    getCurrentUser()
       .then((result) => {
         if (!active) return
+
         if (!isPortalRole(result.user.role)) {
-          sessionStorage.removeItem(SESSION_KEY)
+          clearSession()
           setSession(null)
           return
         }
+
         const refreshedSession = { token, user: result.user }
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(refreshedSession))
+        saveSession(refreshedSession)
         setSession(refreshedSession)
       })
       .catch(() => {
         if (!active) return
-        sessionStorage.removeItem(SESSION_KEY)
+
+        clearSession()
         setSession(null)
       })
-      .finally(() => { if (active) setCheckingSession(false) })
+      .finally(() => {
+        if (active) setCheckingSession(false)
+      })
 
-    return () => { active = false }
+    return () => {
+      active = false
+    }
   }, [session?.token])
 
   async function handleLogin(email: string, password: string) {
-    const result = await apiRequest<LoginResponse>('/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    })
+    const result = await login({ email, password })
+
+    if (!result?.user || !result.token) {
+      throw new Error('The server returned an unexpected login response. Please try again.')
+    }
 
     if (!isPortalRole(result.user.role)) {
-      await apiRequest('/auth/logout', { method: 'POST', token: result.token }).catch(() => undefined)
+      await logout(result.token).catch(() => undefined)
       throw new Error('This account does not have a recognized portal role. Contact your administrator.')
     }
 
     const nextSession = { token: result.token, user: result.user }
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSession))
+    queryClient.clear()
+    saveSession(nextSession)
+    setSession(nextSession)
+  }
+
+  function handleRegistrationVerified(nextSession: AuthSession) {
+    queryClient.clear()
+    saveSession(nextSession)
     setSession(nextSession)
   }
 
   async function handleLogout() {
     const currentSession = session
-    sessionStorage.removeItem(SESSION_KEY)
+    queryClient.clear()
+    clearSession()
     setSession(null)
 
     if (!currentSession) return
     try {
-      await apiRequest('/auth/logout', { method: 'POST', token: currentSession.token })
+      await logout(currentSession.token)
     } catch {
       // Clear the local session even if the network is unavailable or the token expired.
     }
@@ -89,19 +100,25 @@ function App() {
     return <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500">Restoring your secure session…</main>
   }
 
-  if (!session) {
-    return <LoginPage onLogin={handleLogin} />
-  }
-
-  if (session.user.role === 'admin') {
-    return <AdminDashboard user={session.user} token={session.token} onLogout={handleLogout} />
-  }
-
-  if (session.user.role === 'staff') {
-    return <StaffDashboard user={session.user} token={session.token} onLogout={handleLogout} />
-  }
-
-  return <ResidentDashboard user={session.user} token={session.token} onLogout={handleLogout} />
+  return (
+    <BrowserRouter>
+      {session ? (
+        <SessionContext.Provider value={{ session, onLogout: handleLogout }}>
+          <AppRoutes
+            session={session}
+            onLogin={handleLogin}
+            onRegistrationVerified={handleRegistrationVerified}
+          />
+        </SessionContext.Provider>
+      ) : (
+        <AppRoutes
+          session={null}
+          onLogin={handleLogin}
+          onRegistrationVerified={handleRegistrationVerified}
+        />
+      )}
+    </BrowserRouter>
+  )
 }
 
 export default App

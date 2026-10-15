@@ -1,15 +1,65 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, Home, ShieldCheck, Siren } from 'lucide-react'
-import { Alert, Card, MetricCard, PageHeader, StatusBadge } from '../../components/ui'
-import { apiRequest } from '../../shared/api'
+import { Activity, Check, Home, ShieldCheck, Siren, Sparkles } from 'lucide-react'
+import { Alert, Card, StatusBadge } from '../../components/ui'
+import { staffCommunityApi } from '../../shared/api'
 
-type Envelope<T> = { data: T }
-type Household = { id: number; household_code: string; address: string; purok: string; verification_status: string; head?: { name: string; email: string }; members?: Array<{ id: number; name: string }> }
-type ResidentRecord = { user_id: number; verification_status: string; phone: string | null; address: string | null; purok: string | null; user?: { name: string; email: string } }
-type Complaint = { id: number; reference_number: string; subject: string; description: string; category: string; priority: string; status: string; ai_recommended_category: string; ai_recommended_priority: string; ai_summary: string; validation_flags: string[]; possible_duplicate: boolean; purok: string | null; final_category?: string | null; final_priority?: string | null; resident?: { name: string; email: string } }
-type Assistance = { id: number; reference_number: string; incident_type: string; description: string; location: string; priority: string; status: string; resident?: { name: string } }
-type Analytics = { complaints_by_category: Array<{ category: string; total: number }>; complaints_by_purok: Array<{ location: string; total: number }>; average_response_minutes: number; average_resolution_hours: number; complaint_total: number; assistance_total: number }
-type Props = { token: string }
+type Household = {
+  id: number
+  household_code: string
+  address: string
+  purok: string
+  verification_status: string
+  head?: { name: string; email: string }
+  members?: Array<{ id: number; name: string }>
+}
+
+type ResidentRecord = {
+  user_id: number
+  verification_status: string
+  phone: string | null
+  address: string | null
+  purok: string | null
+  user?: { name: string; email: string }
+}
+
+type Complaint = {
+  id: number
+  reference_number: string
+  subject: string
+  description: string
+  category: string
+  priority: string
+  status: string
+  ai_recommended_category: string
+  ai_recommended_priority: string
+  ai_summary: string
+  validation_flags: string[]
+  possible_duplicate: boolean
+  purok: string | null
+  final_category?: string | null
+  final_priority?: string | null
+  resident?: { name: string; email: string }
+}
+
+type Assistance = {
+  id: number
+  reference_number: string
+  incident_type: string
+  description: string
+  location: string
+  priority: string
+  status: string
+  resident?: { name: string }
+}
+
+type Analytics = {
+  complaints_by_category: Array<{ category: string; total: number }>
+  complaints_by_purok: Array<{ location: string; total: number }>
+  average_response_minutes: number
+  average_resolution_hours: number
+  complaint_total: number
+  assistance_total: number
+}
 
 type ReviewData = {
   households: Household[]
@@ -19,13 +69,13 @@ type ReviewData = {
   analytics: Analytics
 }
 
-async function fetchReviewData(token: string): Promise<ReviewData> {
+async function fetchReviewData(): Promise<ReviewData> {
   const [householdResult, residentResult, complaintResult, assistanceResult, analyticsResult] = await Promise.all([
-    apiRequest<Envelope<Household[]>>('/staff/households', { token }),
-    apiRequest<Envelope<ResidentRecord[]>>('/staff/residents', { token }),
-    apiRequest<Envelope<Complaint[]>>('/staff/complaints', { token }),
-    apiRequest<Envelope<Assistance[]>>('/staff/disaster-assistance', { token }),
-    apiRequest<Envelope<Analytics>>('/staff/analytics/community', { token }),
+    staffCommunityApi.getHouseholds<Household>(),
+    staffCommunityApi.getResidents<ResidentRecord>(),
+    staffCommunityApi.getComplaints<Complaint>(),
+    staffCommunityApi.getAssistanceRequests<Assistance>(),
+    staffCommunityApi.getAnalytics<Analytics>(),
   ])
 
   return {
@@ -42,7 +92,7 @@ const complaintStatuses = ['submitted', 'under_review', 'in_progress', 'resolved
 const priorityOptions = ['low', 'medium', 'high', 'critical']
 const assistanceStatuses = ['submitted', 'acknowledged', 'dispatched', 'resolved', 'closed']
 
-export default function CommunityReview({ token }: Props) {
+export default function CommunityReview() {
   const [households, setHouseholds] = useState<Household[]>([])
   const [residents, setResidents] = useState<ResidentRecord[]>([])
   const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -65,25 +115,31 @@ export default function CommunityReview({ token }: Props) {
   }, [])
 
   async function load() {
-    applyReviewData(await fetchReviewData(token))
+    applyReviewData(await fetchReviewData())
   }
 
   useEffect(() => {
     let active = true
-    fetchReviewData(token)
-      .then((data) => { if (active) applyReviewData(data) })
+
+    fetchReviewData()
+      .then((data) => {
+        if (active) applyReviewData(data)
+      })
       .catch((loadError: unknown) => {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load community review data.')
       })
-    return () => { active = false }
-  }, [applyReviewData, token])
 
-  async function update(path: string, body: object, successText: string) {
+    return () => {
+      active = false
+    }
+  }, [applyReviewData])
+
+  async function update(action: () => Promise<unknown>, successText: string) {
     setBusy(true)
     setError('')
     setMessage('')
     try {
-      await apiRequest(path, { token, method: 'PUT', body })
+      await action()
       await load()
       setMessage(successText)
     } catch (saveError) {
@@ -95,24 +151,33 @@ export default function CommunityReview({ token }: Props) {
 
   function saveComplaintDecision(complaint: Complaint) {
     void update(
-      `/staff/complaints/${complaint.id}`,
-      {
+      () => staffCommunityApi.reviewComplaint(complaint.id, {
         status: statuses[complaint.id] ?? complaint.status,
         final_category: categories[complaint.id] ?? complaint.final_category ?? complaint.ai_recommended_category,
         final_priority: priorities[complaint.id] ?? complaint.final_priority ?? complaint.ai_recommended_priority,
         staff_remarks: remarks[complaint.id] ?? '',
-      },
+      }),
       'Staff decision saved and audit logged.',
     )
   }
 
   return (
-    <section className="space-y-6">
-      <PageHeader
-        eyebrow="Community operations"
-        title="Verification, complaints & emergencies"
-        description="Verify residents and households, review AI-assisted complaints, respond to emergencies, and watch local trends."
-      />
+    <section className="space-y-7">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-[0.12em] text-teal-800 uppercase">
+            <Sparkles size={13} /> Community operations
+          </p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Community review</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Verify resident and household records, resolve incoming reports, and coordinate emergency requests.
+          </p>
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-teal-100 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-600 shadow-sm">
+          <span className="size-2 rounded-full bg-teal-500" />
+          Staff review workspace
+        </div>
+      </div>
 
       {(error || message) && (
         <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setMessage('') }}>
@@ -120,41 +185,56 @@ export default function CommunityReview({ token }: Props) {
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Households" value={households.length} icon={Home} />
-        <MetricCard label="Residents to verify" value={residents.filter((item) => item.verification_status !== 'verified').length} icon={ShieldCheck} />
-        <MetricCard label="Complaints" value={analytics?.complaint_total ?? complaints.length} icon={Activity} />
-        <MetricCard label="Emergency requests" value={analytics?.assistance_total ?? assistance.length} icon={Siren} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <ReviewMetric label="Households" value={households.length} icon={Home} tone="teal" />
+        <ReviewMetric label="Residents awaiting verification" value={residents.filter((item) => item.verification_status !== 'verified').length} icon={ShieldCheck} tone="amber" />
+        <ReviewMetric label="Total complaints" value={analytics?.complaint_total ?? complaints.length} icon={Activity} tone="slate" />
+        <ReviewMetric label="Emergency requests" value={analytics?.assistance_total ?? assistance.length} icon={Siren} tone="rose" />
       </div>
 
       {/* ----------------------- Resident verification ----------------------- */}
-      <Card title="Resident registration verification">
+      <Card className="border-t-2 border-t-teal-600"
+        title="Resident verification"
+        subtitle="Review profile details before confirming resident records."
+        action={<span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">{residents.filter((item) => item.verification_status !== 'verified').length} to review</span>}
+      >
         {residents.length === 0 ? (
           <EmptyRow text="No resident profiles submitted." />
         ) : (
           <div className="divide-y divide-slate-100">
             {residents.map((record) => (
-              <div key={record.user_id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div className="min-w-0">
+              <div key={record.user_id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50/70">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-teal-50 to-emerald-100 text-sm font-semibold text-teal-800 ring-1 ring-inset ring-teal-100">
+                    {record.user?.name?.slice(0, 1).toUpperCase() ?? 'R'}
+                  </span>
+                  <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800">
                     {record.user?.name} <span className="font-normal text-slate-500">· {record.user?.email}</span>
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {record.phone || 'No phone'} · {record.address || 'No address'} · {record.purok || 'No purok'}
                   </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={record.verification_status} />
                   <button
                     disabled={busy}
-                    onClick={() => void update(`/staff/residents/${record.user_id}/verification`, { status: 'verified' }, 'Resident verified.')}
+                    onClick={() => void update(
+                      () => staffCommunityApi.verifyResident(record.user_id, 'verified'),
+                      'Resident verified.',
+                    )}
                     className="btn btn-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   >
-                    Verify
+                    <Check size={14} /> Verify
                   </button>
                   <button
                     disabled={busy}
-                    onClick={() => void update(`/staff/residents/${record.user_id}/verification`, { status: 'rejected' }, 'Resident verification rejected.')}
+                    onClick={() => void update(
+                      () => staffCommunityApi.verifyResident(record.user_id, 'rejected'),
+                      'Resident verification rejected.',
+                    )}
                     className="btn btn-danger-soft btn-sm"
                   >
                     Reject
@@ -186,7 +266,10 @@ export default function CommunityReview({ token }: Props) {
                   <StatusBadge status={household.verification_status} />
                   <button
                     disabled={busy}
-                    onClick={() => void update(`/staff/households/${household.id}/verification`, { status: 'verified' }, 'Household verified.')}
+                    onClick={() => void update(
+                      () => staffCommunityApi.verifyHousehold(household.id, 'verified'),
+                      'Household verified.',
+                    )}
                     className="btn btn-soft btn-sm"
                   >
                     Verify
@@ -315,8 +398,9 @@ export default function CommunityReview({ token }: Props) {
                   <button
                     disabled={busy}
                     onClick={() => void update(
-                      `/staff/disaster-assistance/${item.id}`,
-                      { status: statuses[item.id] ?? item.status },
+                      () => staffCommunityApi.updateAssistanceRequest(item.id, {
+                        status: statuses[item.id] ?? item.status,
+                      }),
                       'Assistance request updated.',
                     )}
                     className="btn btn-soft btn-sm"
@@ -372,6 +456,39 @@ export default function CommunityReview({ token }: Props) {
         </div>
       </Card>
     </section>
+  )
+}
+
+function ReviewMetric({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: number
+  icon: typeof Home
+  tone: 'teal' | 'amber' | 'slate' | 'rose'
+}) {
+  const tones = {
+    teal: 'bg-teal-50 text-teal-800 ring-teal-100',
+    amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+    slate: 'bg-slate-100 text-slate-700 ring-slate-200',
+    rose: 'bg-rose-50 text-rose-700 ring-rose-100',
+  }
+
+  return (
+    <article className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-slate-500">{label}</p>
+          <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{value.toLocaleString()}</p>
+        </div>
+        <span className={`grid size-10 place-items-center rounded-xl ring-1 ring-inset ${tones[tone]}`}>
+          <Icon size={19} />
+        </span>
+      </div>
+    </article>
   )
 }
 

@@ -1,42 +1,30 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api'
+import type { AxiosRequestConfig } from 'axios'
+import { apiClient } from './api/client'
 
-type ApiOptions = Omit<RequestInit, 'headers' | 'body'> & {
+type ApiOptions = Omit<AxiosRequestConfig, 'url' | 'data'> & {
   token?: string
   body?: BodyInit | object | null
-  headers?: HeadersInit
 }
 
+/**
+ * Compatibility helper for feature screens that still build a request from a
+ * dynamic path. New API calls should live in a domain module under api/.
+ */
 export async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const { token, body, headers: suppliedHeaders, ...requestOptions } = options
-  const headers = new Headers(suppliedHeaders)
-  headers.set('Accept', 'application/json')
-
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
-  }
-
-  let requestBody: BodyInit | null | undefined
-  if (body !== null && typeof body === 'object' && !(body instanceof FormData) && !(body instanceof Blob)) {
-    headers.set('Content-Type', 'application/json')
-    requestBody = JSON.stringify(body)
-  } else {
-    requestBody = body as BodyInit | null | undefined
-  }
-
-  const response = await fetch(`${API_URL}${path}`, {
+  const { token, body, ...requestOptions } = options
+  const response = await apiClient.request<T>({
     ...requestOptions,
-    headers,
-    body: requestBody,
+    url: path,
+    data: body,
+    headers: token
+      ? { ...requestOptions.headers, Authorization: `Bearer ${token}` }
+      : requestOptions.headers,
   })
 
-  const data = response.status === 204 ? null : await response.json().catch(() => null)
-
-  if (!response.ok) {
-    const validationErrors = data?.errors
-      ? Object.values(data.errors as Record<string, string[]>).flat().join(' ')
-      : ''
-    throw new Error(validationErrors || data?.message || `Request failed (${response.status})`)
-  }
-
-  return data as T
+  return response.data
 }
+
+export * from './api/auth'
+export * from './api/admin'
+export * from './api/community'
+export * from './api/document-requests'

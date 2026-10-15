@@ -1,5 +1,9 @@
 export type Role = 'admin' | 'staff' | 'resident'
 
+export type ListResponse<T> = { data: T[] }
+
+export type DataResponse<T> = { data: T }
+
 export type PortalUser = {
   id: number
   name: string
@@ -14,6 +18,8 @@ export type DocumentRequest = {
   status: string
   remarks: string | null
   created_at: string
+  generated_document_available?: boolean
+  generated_document_at?: string | null
   user?: { id: number; name: string; email?: string }
   document_type?: { id: number; name: string }
   reviewer?: { id: number; name: string } | null

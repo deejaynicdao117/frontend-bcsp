@@ -56,11 +56,11 @@
   }
 
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/40;
   }
 
   .card-header {
-    @apply flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4;
+    @apply flex items-center justify-between gap-3 border-b border-slate-100/90 px-5 py-4;
   }
 
   .card-title {
@@ -80,7 +80,7 @@
   }
 
   .table-head {
-    @apply bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply bg-slate-50/80 text-[10px] font-semibold tracking-[0.12em] text-slate-500 uppercase;
   }
 
   .table-th {
@@ -89,5 +89,9 @@
 
   .table-td {
     @apply px-5 py-3.5 align-middle text-sm text-slate-700;
+  }
+
+  .table-row {
+    @apply transition-colors hover:bg-blue-50/35;
   }
 }
