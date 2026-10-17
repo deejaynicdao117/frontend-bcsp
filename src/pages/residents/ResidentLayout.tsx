@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import ResidentSidebar from '../../components/resident/ResidentSidebar'
 import { useSession } from '../../shared/session-context'
@@ -9,12 +9,12 @@ export default function ResidentLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-50 lg:flex">
+    <main className="min-h-screen overflow-x-hidden bg-[#f3f6fb] lg:pl-68">
       <ResidentSidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} onLogout={onLogout} />
 
       <div className="min-h-screen min-w-0 flex-1">
-        <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl">
+          <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6 lg:px-9">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
@@ -27,17 +27,19 @@ export default function ResidentLayout() {
                 <Menu size={19} />
               </button>
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.14em] text-blue-700 uppercase">Resident workspace</p>
-                <p className="truncate text-sm font-semibold text-slate-900">{session.user.name}</p>
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-blue-700 uppercase">Resident portal</p>
+                <p className="truncate text-sm font-semibold text-slate-900">Welcome, {session.user.name}</p>
               </div>
             </div>
-            <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 sm:flex">
-              <span className="size-2 rounded-full bg-emerald-500" /> Community access
+            <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+              <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" />
+              <span className="hidden sm:inline">Community access</span>
+              <Bell size={15} className="ml-1 text-emerald-700 sm:hidden" />
             </div>
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1440px] space-y-7 px-4 py-7 sm:px-6 sm:py-9 lg:px-9">
+        <div className="resident-theme mx-auto max-w-[1440px] space-y-7 px-4 py-6 sm:px-6 sm:py-8 lg:px-9">
           <Outlet />
         </div>
       </div>

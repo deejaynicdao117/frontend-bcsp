@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Megaphone, Send } from 'lucide-react'
 import { Alert, Card, StatusBadge } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type Complaint = {
@@ -72,12 +73,7 @@ export default function ComplaintsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-          <Megaphone size={14} /> Complaint center
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Complaint and reports</h1>
-      </section>
+      <ResidentPageHero eyebrow="Community voice" title="Complaints and reports" description="Share a concern with the barangay team and follow its review progress from one place." icon={Megaphone} tone="amber" />
 
       {(error || feedback) && (
         <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setFeedback('') }}>

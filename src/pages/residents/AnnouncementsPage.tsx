@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Bell, CalendarDays } from 'lucide-react'
 import { Alert, Card } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type Announcement = {
@@ -40,12 +41,7 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-          <Bell size={14} /> Barangay updates
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Announcements</h1>
-      </section>
+      <ResidentPageHero eyebrow="Barangay updates" title="Announcements" description="Stay informed about community events, important notices, and public safety advisories." icon={Bell} />
 
       {error && <Alert tone="error">{error}</Alert>}
 

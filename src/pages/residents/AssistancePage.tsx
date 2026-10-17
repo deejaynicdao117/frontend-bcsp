@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, Siren } from 'lucide-react'
 import { Alert, Card, StatusBadge } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type Assistance = {
@@ -67,12 +68,7 @@ export default function AssistancePage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-          <Siren size={14} /> Disaster assistance
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Emergency and disaster support</h1>
-      </section>
+      <ResidentPageHero eyebrow="Safety and response" title="Emergency assistance" description="Send a request for barangay support and keep track of response updates. For immediate danger, call emergency services first." icon={Siren} tone="rose" />
 
       {(error || feedback) && (
         <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setFeedback('') }}>

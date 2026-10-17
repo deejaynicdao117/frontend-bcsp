@@ -94,4 +94,24 @@
   .table-row {
     @apply transition-colors hover:bg-blue-50/35;
   }
+
+  .resident-theme .card {
+    @apply rounded-3xl border-slate-200/70 shadow-md shadow-slate-900/[0.035] transition-shadow duration-200 hover:shadow-lg hover:shadow-slate-900/5.5;
+  }
+
+  .resident-theme .card-header {
+    @apply border-slate-100 px-5 py-5 sm:px-6;
+  }
+
+  .resident-theme .card-title {
+    @apply text-base tracking-tight;
+  }
+
+  .resident-theme .card-subtitle {
+    @apply mt-1 text-[13px] leading-5;
+  }
+
+  .resident-theme .input {
+    @apply rounded-xl border-slate-200 px-3.5 py-2.5 focus:border-blue-500 focus:ring-blue-500/15;
+  }
 }
