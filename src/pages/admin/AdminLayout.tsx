@@ -82,7 +82,7 @@ export default function AdminLayout() {
   )) ?? pageMeta[0]
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 lg:flex">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
       <Sidebar
         onLogout={onLogout}
         notificationCount={notifications.length}

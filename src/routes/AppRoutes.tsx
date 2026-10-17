@@ -10,6 +10,7 @@ import CommunityManagement from '../pages/admin/CommunityManagement'
 import ReportsPage from '../pages/admin/ReportsPage'
 import NotificationsPage from '../pages/admin/NotificationsPage'
 import AdminProfilePage from '../pages/admin/ProfilePage'
+import BrowserNotificationListener from '../components/shared/BrowserNotificationListener'
 import StaffLayout from '../pages/staff/StaffLayout'
 import StaffRequestsPage from '../pages/staff/StaffRequestsPage'
 import CommunityReview from '../pages/staff/CommunityReview'
@@ -56,6 +57,8 @@ function CommunityReviewRoute() {
 
 function AuthenticatedRoutes() {
   return (
+    <>
+    <BrowserNotificationListener />
     <Routes>
       <Route path="/" element={<RoleHome />} />
       <Route path="/login" element={<Navigate to="/" replace />} />
@@ -94,6 +97,7 @@ function AuthenticatedRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

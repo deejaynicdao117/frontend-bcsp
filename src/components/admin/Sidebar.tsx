@@ -48,7 +48,7 @@ export default function Sidebar({ onLogout, notificationCount, isOpen, onClose }
     <aside
       id="admin-navigation"
       aria-label="Admin navigation"
-      className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-slate-800 bg-slate-950 text-white shadow-2xl shadow-slate-950/30 transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-slate-800 bg-slate-950 text-white shadow-2xl shadow-slate-950/30 transition-transform duration-200 ease-out lg:fixed lg:inset-y-0 lg:z-30 lg:h-dvh lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
