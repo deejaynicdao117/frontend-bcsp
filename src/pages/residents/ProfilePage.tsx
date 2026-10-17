@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BadgeCheck, Save } from 'lucide-react'
 import { Alert, Card } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type ProfileData = {
@@ -98,19 +99,17 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-              <BadgeCheck size={14} /> Resident profile
-            </p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Your household data</h1>
-          </div>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 capitalize">
+      <ResidentPageHero
+        eyebrow="Resident profile"
+        title="Your household details"
+        description="Keep your information current so the barangay team can verify your household and serve you better."
+        icon={BadgeCheck}
+        action={(
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white capitalize backdrop-blur-sm">
             {profile?.profile?.verification_status ?? 'unverified'}
           </span>
-        </div>
-      </section>
+        )}
+      />
 
       {(error || feedback) && (
         <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setFeedback('') }}>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PhoneCall } from 'lucide-react'
 import { Alert, Card } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type Contact = {
@@ -39,12 +40,7 @@ export default function EmergencyContactsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-          <PhoneCall size={14} /> Emergency contacts
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Quick access hotlines</h1>
-      </section>
+      <ResidentPageHero eyebrow="Always within reach" title="Emergency hotlines" description="Quickly find the right barangay and emergency contact when you need assistance." icon={PhoneCall} tone="teal" />
 
       {error && <Alert tone="error">{error}</Alert>}
 

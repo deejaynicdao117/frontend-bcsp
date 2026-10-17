@@ -9,7 +9,7 @@ export default function StaffLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f4f8f7] lg:flex">
+    <main className="min-h-screen overflow-x-hidden bg-[#f4f8f7] lg:pl-68">
       <StaffSidebar
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}

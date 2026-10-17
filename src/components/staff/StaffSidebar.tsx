@@ -45,7 +45,7 @@ export default function StaffSidebar({ isOpen, onClose, onLogout }: StaffSidebar
       <aside
         id="staff-navigation"
         aria-label="Staff pages"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-teal-950/10 bg-white shadow-2xl shadow-slate-950/15 transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:border-r lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-teal-950/10 bg-white shadow-2xl shadow-slate-950/15 transition-transform duration-200 ease-out lg:fixed lg:inset-y-0 lg:z-30 lg:h-dvh lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:border-r lg:shadow-none ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

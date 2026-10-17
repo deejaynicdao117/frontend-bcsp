@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPinned } from 'lucide-react'
 import { Alert, Card } from '../../components/ui'
+import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
 
 type Center = {
@@ -40,12 +41,7 @@ export default function EvacuationCentersPage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-          <MapPinned size={14} /> Evacuation centers
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Shelter readiness map</h1>
-      </section>
+      <ResidentPageHero eyebrow="Preparedness resources" title="Evacuation centers" description="Review nearby shelter locations and their latest capacity and readiness information." icon={MapPinned} tone="emerald" />
 
       {error && <Alert tone="error">{error}</Alert>}
 
