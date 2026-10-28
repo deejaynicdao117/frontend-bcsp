@@ -19,7 +19,7 @@ type ResidentRecord = {
   phone: string | null
   address: string | null
   purok: string | null
-  user?: { name: string; email: string }
+  user?: { id?: number; name: string; email: string }
 }
 
 type Complaint = {
@@ -33,6 +33,7 @@ type Complaint = {
   ai_recommended_category: string
   ai_recommended_priority: string
   ai_summary: string
+  ai_engine?: string
   validation_flags: string[]
   possible_duplicate: boolean
   purok: string | null
@@ -105,6 +106,10 @@ export default function CommunityReview() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const loadErrorMessage = error && !residents.length && !households.length
+    ? error
+    : ''
 
   const applyReviewData = useCallback((data: ReviewData) => {
     setHouseholds(data.households)
@@ -181,7 +186,7 @@ export default function CommunityReview() {
 
       {(error || message) && (
         <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setMessage('') }}>
-          {error || message}
+          {loadErrorMessage || message || (error ? `Some community data could not be loaded: ${error}` : '')}
         </Alert>
       )}
 
@@ -202,46 +207,64 @@ export default function CommunityReview() {
           <EmptyRow text="No resident profiles submitted." />
         ) : (
           <div className="divide-y divide-slate-100">
-            {residents.map((record) => (
-              <div key={record.user_id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50/70">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-teal-50 to-emerald-100 text-sm font-semibold text-teal-800 ring-1 ring-inset ring-teal-100">
-                    {record.user?.name?.slice(0, 1).toUpperCase() ?? 'R'}
-                  </span>
-                  <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-800">
-                    {record.user?.name} <span className="font-normal text-slate-500">· {record.user?.email}</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {record.phone || 'No phone'} · {record.address || 'No address'} · {record.purok || 'No purok'}
-                  </p>
+            {residents.map((record) => {
+              const residentId = record.user?.id ?? record.user_id
+
+              return (
+                <div key={residentId ?? record.user_id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50/70">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-teal-50 to-emerald-100 text-sm font-semibold text-teal-800 ring-1 ring-inset ring-teal-100">
+                      {record.user?.name?.slice(0, 1).toUpperCase() ?? 'R'}
+                    </span>
+                    <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800">
+                      {record.user?.name} <span className="font-normal text-slate-500">· {record.user?.email}</span>
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {record.phone || 'No phone'} · {record.address || 'No address'} · {record.purok || 'No purok'}
+                    </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={record.verification_status} />
+                    <button
+                      disabled={busy || !residentId}
+                      onClick={() => {
+                        if (!residentId) {
+                          setError('Resident user could not be identified for verification.')
+                          return
+                        }
+
+                        void update(
+                          () => staffCommunityApi.verifyResident(residentId, 'verified'),
+                          'Resident verified.',
+                        )
+                      }}
+                      className="btn btn-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    >
+                      <Check size={14} /> Verify
+                    </button>
+                    <button
+                      disabled={busy || !residentId}
+                      onClick={() => {
+                        if (!residentId) {
+                          setError('Resident user could not be identified for verification.')
+                          return
+                        }
+
+                        void update(
+                          () => staffCommunityApi.verifyResident(residentId, 'rejected'),
+                          'Resident verification rejected.',
+                        )
+                      }}
+                      className="btn btn-danger-soft btn-sm"
+                    >
+                      Reject
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={record.verification_status} />
-                  <button
-                    disabled={busy}
-                    onClick={() => void update(
-                      () => staffCommunityApi.verifyResident(record.user_id, 'verified'),
-                      'Resident verified.',
-                    )}
-                    className="btn btn-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  >
-                    <Check size={14} /> Verify
-                  </button>
-                  <button
-                    disabled={busy}
-                    onClick={() => void update(
-                      () => staffCommunityApi.verifyResident(record.user_id, 'rejected'),
-                      'Resident verification rejected.',
-                    )}
-                    className="btn btn-danger-soft btn-sm"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </Card>
@@ -313,7 +336,7 @@ export default function CommunityReview() {
                     {complaint.ai_recommended_category} · {complaint.ai_recommended_priority}
                   </p>
                   {complaint.ai_summary && <p className="mt-1 text-indigo-700">Summary: {complaint.ai_summary}</p>}
-                  <p className="mt-1 text-indigo-600">Engine: local keyword rules · Staff must confirm or override.</p>
+                  <p className="mt-1 text-indigo-600">Engine: {complaint.ai_engine ?? 'local_keyword_rules_v1'} · Staff must confirm or override.</p>
                   {complaint.validation_flags?.length > 0 && (
                     <p className="mt-1 text-amber-800">Validation flags: {complaint.validation_flags.join(', ')}</p>
                   )}

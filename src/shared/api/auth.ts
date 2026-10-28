@@ -16,6 +16,21 @@ export type RegistrationResponse = {
   email: string
 }
 
+export type BarangayLocation = {
+  id: number
+  psgc_code: string
+  name: string
+  municipality: string
+  province: string
+  logo_url?: string | null
+  primary_color?: string
+}
+
+export async function getBulacanBarangays(): Promise<BarangayLocation[]> {
+  const response = await apiClient.get<{ data: BarangayLocation[] }>('/locations/bulacan/barangays')
+  return response.data.data
+}
+
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   const response = await apiClient.post<LoginResponse>('/auth/login', credentials)
   return response.data
@@ -29,6 +44,7 @@ export async function registerResident(data: {
   email: string
   password: string
   password_confirmation: string
+  barangay_id: number
 }): Promise<RegistrationResponse> {
   const response = await apiClient.post<RegistrationResponse>('/auth/register', data)
   return response.data

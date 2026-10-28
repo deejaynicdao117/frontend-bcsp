@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
+import SignOutConfirmation from './components/shared/SignOutConfirmation'
 import AppRoutes from './routes/AppRoutes'
 import { getCurrentUser, login, logout } from './shared/api'
 import { SessionContext } from './shared/session-context'
@@ -14,12 +15,13 @@ import {
 } from './shared/session-storage'
 
 function isPortalRole(role: string): role is Role {
-  return role === 'admin' || role === 'staff' || role === 'resident'
+  return role === 'platform_admin' || role === 'admin' || role === 'staff' || role === 'resident'
 }
 
 function App() {
   const queryClient = useQueryClient()
   const [session, setSession] = useState<AuthSession | null>(readStoredSession)
+  const [signOutConfirmationOpen, setSignOutConfirmationOpen] = useState(false)
   const [checkingSession, setCheckingSession] = useState(
     Boolean(sessionStorage.getItem(SESSION_STORAGE_KEY)),
   )
@@ -96,6 +98,15 @@ function App() {
     }
   }
 
+  function requestLogout() {
+    setSignOutConfirmationOpen(true)
+  }
+
+  async function confirmLogout() {
+    setSignOutConfirmationOpen(false)
+    await handleLogout()
+  }
+
   if (checkingSession) {
     return <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500">Restoring your secure session…</main>
   }
@@ -103,12 +114,19 @@ function App() {
   return (
     <BrowserRouter>
       {session ? (
-        <SessionContext.Provider value={{ session, onLogout: handleLogout }}>
-          <AppRoutes
-            session={session}
-            onLogin={handleLogin}
-            onRegistrationVerified={handleRegistrationVerified}
-          />
+        <SessionContext.Provider value={{ session, onLogout: requestLogout }}>
+          <>
+            <AppRoutes
+              session={session}
+              onLogin={handleLogin}
+              onRegistrationVerified={handleRegistrationVerified}
+            />
+            <SignOutConfirmation
+              open={signOutConfirmationOpen}
+              onCancel={() => setSignOutConfirmationOpen(false)}
+              onConfirm={() => void confirmLogout()}
+            />
+          </>
         </SessionContext.Provider>
       ) : (
         <AppRoutes

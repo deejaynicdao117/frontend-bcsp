@@ -6,7 +6,7 @@ export default function RequestTable({ requests }: { requests: DocumentRequest[]
   if (requests.length === 0) return <EmptyState title="No document requests found" hint="New activity will appear here." />
 
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
       <table className="w-full min-w-[680px] text-sm">
         <thead className="table-head">
           <tr>

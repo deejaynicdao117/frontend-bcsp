@@ -31,8 +31,12 @@ export default function StaffLayout() {
                 <Menu size={19} />
               </button>
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.14em] text-teal-700 uppercase">Staff workspace</p>
+                <div className="flex items-center gap-2">
+                  {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-7 rounded-md bg-white object-contain" />}
+                  <div className="min-w-0"><p style={{ color: session.user.barangay?.primary_color ?? '#0f766e' }} className="truncate text-[10px] font-semibold tracking-[0.14em] uppercase">{session.user.barangay?.name ?? 'Staff workspace'}</p>
                 <p className="truncate text-sm font-semibold text-slate-900">{session.user.name}</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="hidden items-center gap-2 text-xs font-medium text-teal-800 sm:flex">

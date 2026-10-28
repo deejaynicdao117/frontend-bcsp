@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'staff' | 'resident'
+export type Role = 'platform_admin' | 'admin' | 'staff' | 'resident'
 
 export type ListResponse<T> = { data: T[] }
 
@@ -9,6 +9,16 @@ export type PortalUser = {
   name: string
   email: string
   role: Role
+  barangay_id?: number | null
+  barangay?: {
+    id: number
+    name: string
+    municipality: string
+    province: string
+    logo_path?: string | null
+    logo_url?: string | null
+    primary_color?: string
+  } | null
 }
 
 export type DocumentRequest = {
@@ -17,6 +27,9 @@ export type DocumentRequest = {
   purpose: string
   status: string
   remarks: string | null
+  rejection_reason?: string | null
+  ready_for_pickup_at?: string | null
+  released_at?: string | null
   created_at: string
   generated_document_available?: boolean
   generated_document_at?: string | null

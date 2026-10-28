@@ -38,6 +38,10 @@ export const residentCommunityApi = {
 }
 
 export const staffCommunityApi = {
+  getAnnouncements: <T>() => get<Envelope<T[]>>('/staff/announcements'),
+  createAnnouncement: (data: object) => post('/staff/announcements', data),
+  updateAnnouncement: (id: number, data: object) => put(`/staff/announcements/${id}`, data),
+  deleteAnnouncement: (id: number) => remove(`/staff/announcements/${id}`),
   getHouseholds: <T>() => get<Envelope<T[]>>('/staff/households'),
   getResidents: <T>() => get<Envelope<T[]>>('/staff/residents'),
   getComplaints: <T>() => get<Envelope<T[]>>('/staff/complaints'),
@@ -57,7 +61,6 @@ export const adminCommunityApi = {
   getComplaints: <T>() => get<Envelope<T[]>>('/admin/complaints'),
   getAssistanceRequests: <T>() => get<Envelope<T[]>>('/admin/disaster-assistance'),
   getActivityLogs: <T>() => get<Envelope<T[]>>('/admin/activity-logs'),
-  getSettings: <T>() => get<Envelope<T[]>>('/admin/settings'),
   createAnnouncement: (data: object) => post('/admin/announcements', data),
   updateAnnouncement: (id: number, data: object) => put(`/admin/announcements/${id}`, data),
   deleteAnnouncement: (id: number) => remove(`/admin/announcements/${id}`),
@@ -65,5 +68,4 @@ export const adminCommunityApi = {
   deleteEmergencyContact: (id: number) => remove(`/admin/emergency-contacts/${id}`),
   createEvacuationCenter: (data: object) => post('/admin/evacuation-centers', data),
   deleteEvacuationCenter: (id: number) => remove(`/admin/evacuation-centers/${id}`),
-  saveSetting: (data: object) => put('/admin/settings', data),
 }
