@@ -120,6 +120,11 @@ export async function getPlatformBarangays(): Promise<ListResponse<BarangayWorks
   return response.data
 }
 
+export async function createBarangayWorkspace(data: FormData): Promise<DataResponse<BarangayWorkspace>> {
+  const response = await apiClient.post<DataResponse<BarangayWorkspace>>('/platform/barangays', data)
+  return response.data
+}
+
 export async function updateBarangayWorkspace(psgcCode: string, data: FormData): Promise<DataResponse<BarangayWorkspace>> {
   const response = await apiClient.post<DataResponse<BarangayWorkspace>>(`/platform/barangays/${psgcCode}`, data)
   return response.data
