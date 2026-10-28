@@ -1,30 +1,37 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
-import LoginPage from '../pages/LoginPage'
-import RegisterPage from '../pages/RegisterPage'
-import AdminLayout from '../pages/admin/AdminLayout'
-import OverviewPage from '../pages/admin/OverviewPage'
-import UsersPage from '../pages/admin/UsersPage'
-import RequestsPage from '../pages/admin/RequestsPage'
-import DocumentTypesPage from '../pages/admin/DocumentTypesPage'
-import CommunityManagement from '../pages/admin/CommunityManagement'
-import ReportsPage from '../pages/admin/ReportsPage'
-import NotificationsPage from '../pages/admin/NotificationsPage'
-import AdminProfilePage from '../pages/admin/ProfilePage'
-import BrowserNotificationListener from '../components/shared/BrowserNotificationListener'
-import StaffLayout from '../pages/staff/StaffLayout'
-import StaffRequestsPage from '../pages/staff/StaffRequestsPage'
-import CommunityReview from '../pages/staff/CommunityReview'
-import ResidentLayout from '../pages/residents/ResidentLayout'
-import ResidentRequestsPage from '../pages/residents/ResidentRequestsPage'
-import ProfilePage from '../pages/residents/ProfilePage'
-import ComplaintsPage from '../pages/residents/ComplaintsPage'
-import AssistancePage from '../pages/residents/AssistancePage'
-import AnnouncementsPage from '../pages/residents/AnnouncementsPage'
-import EmergencyContactsPage from '../pages/residents/EmergencyContactsPage'
-import EvacuationCentersPage from '../pages/residents/EvacuationCentersPage'
 import { homePath, useSession } from '../shared/session-context'
 import type { AuthSession } from '../shared/session-context'
 import type { Role } from '../shared/types'
+
+const LoginPage = lazy(() => import('../pages/LoginPage'))
+const RegisterPage = lazy(() => import('../pages/RegisterPage'))
+const TermsPage = lazy(() => import('../pages/TermsPage'))
+const PrivacyPage = lazy(() => import('../pages/PrivacyPage'))
+const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'))
+const OverviewPage = lazy(() => import('../pages/admin/OverviewPage'))
+const UsersPage = lazy(() => import('../pages/admin/UsersPage'))
+const RequestsPage = lazy(() => import('../pages/admin/RequestsPage'))
+const DocumentTypesPage = lazy(() => import('../pages/admin/DocumentTypesPage'))
+const CommunityManagement = lazy(() => import('../pages/admin/CommunityManagement'))
+const ReportsPage = lazy(() => import('../pages/admin/ReportsPage'))
+const NotificationsPage = lazy(() => import('../pages/admin/NotificationsPage'))
+const AdminProfilePage = lazy(() => import('../pages/admin/ProfilePage'))
+const BrowserNotificationListener = lazy(() => import('../components/shared/BrowserNotificationListener'))
+const PlatformLayout = lazy(() => import('../pages/platform/PlatformLayout'))
+const PlatformBarangaysPage = lazy(() => import('../pages/platform/BarangaysPage'))
+const StaffLayout = lazy(() => import('../pages/staff/StaffLayout'))
+const StaffRequestsPage = lazy(() => import('../pages/staff/StaffRequestsPage'))
+const StaffAnnouncementsPage = lazy(() => import('../pages/staff/AnnouncementsPage'))
+const CommunityReview = lazy(() => import('../pages/staff/CommunityReview'))
+const ResidentLayout = lazy(() => import('../pages/residents/ResidentLayout'))
+const ResidentRequestsPage = lazy(() => import('../pages/residents/ResidentRequestsPage'))
+const ProfilePage = lazy(() => import('../pages/residents/ProfilePage'))
+const ComplaintsPage = lazy(() => import('../pages/residents/ComplaintsPage'))
+const AssistancePage = lazy(() => import('../pages/residents/AssistancePage'))
+const AnnouncementsPage = lazy(() => import('../pages/residents/AnnouncementsPage'))
+const EmergencyContactsPage = lazy(() => import('../pages/residents/EmergencyContactsPage'))
+const EvacuationCentersPage = lazy(() => import('../pages/residents/EvacuationCentersPage'))
 
 export type AppRoutesProps = {
   session: AuthSession | null
@@ -63,6 +70,12 @@ function AuthenticatedRoutes() {
       <Route path="/" element={<RoleHome />} />
       <Route path="/login" element={<Navigate to="/" replace />} />
 
+      <Route element={<RequireAuth role="platform_admin" />}>
+        <Route path="/platform" element={<PlatformLayout />}>
+          <Route path="barangays" element={<PlatformBarangaysPage />} />
+        </Route>
+      </Route>
+
       <Route element={<RequireAuth role="admin" />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<OverviewPage />} />
@@ -79,6 +92,7 @@ function AuthenticatedRoutes() {
       <Route element={<RequireAuth role="staff" />}>
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<StaffRequestsPage />} />
+          <Route path="announcements" element={<StaffAnnouncementsPage />} />
           <Route path="community" element={<CommunityReviewRoute />} />
         </Route>
       </Route>
@@ -102,15 +116,17 @@ function AuthenticatedRoutes() {
 }
 
 export default function AppRoutes({ session, onLogin, onRegistrationVerified }: AppRoutesProps) {
-  if (!session) {
-    return (
+  return (
+    <Suspense fallback={<main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500">Loading portal…</main>}>
+      {!session ? (
       <Routes>
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/login" element={<LoginPage onLogin={onLogin} />} />
         <Route path="/register" element={<RegisterPage onVerified={onRegistrationVerified} />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-    )
-  }
-
-  return <AuthenticatedRoutes />
+      ) : <AuthenticatedRoutes />}
+    </Suspense>
+  )
 }

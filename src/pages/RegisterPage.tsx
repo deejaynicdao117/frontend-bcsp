@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, Building2, MailCheck, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   registerResident,
+  getBulacanBarangays,
   resendRegistrationCode,
   verifyRegistrationCode,
 } from '../shared/api'
 import type { AuthSession } from '../shared/session-context'
+import type { BarangayLocation } from '../shared/api'
 
 export type RegisterPageProps = {
   onVerified: (session: AuthSession) => void
@@ -18,20 +20,37 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
   const [firstName, setFirstName] = useState('')
   const [middleName, setMiddleName] = useState('')
   const [sex, setSex] = useState('')
+  const [barangayId, setBarangayId] = useState('')
+  const [barangays, setBarangays] = useState<BarangayLocation[]>([])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [code, setCode] = useState('')
   const [verificationEmail, setVerificationEmail] = useState('')
   const [step, setStep] = useState<'details' | 'verify'>('details')
+  const [acceptedLegal, setAcceptedLegal] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getBulacanBarangays()
+      .then((locations) => { if (active) setBarangays(locations) })
+      .catch(() => { if (active) setError('Unable to load the Bulacan barangay list. Please refresh and try again.') })
+    return () => { active = false }
+  }, [])
 
   async function submitRegistration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setMessage('')
+
+    if (!acceptedLegal) {
+      setError('Please accept the Terms and Conditions and Privacy Policy to create an account.')
+      return
+    }
+
     setBusy(true)
 
     try {
@@ -40,6 +59,7 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
         first_name: firstName.trim(),
         middle_name: middleName.trim(),
         sex: sex as 'female' | 'male' | 'prefer_not_to_say',
+        barangay_id: Number(barangayId),
         email: email.trim(),
         password,
         password_confirmation: passwordConfirmation,
@@ -62,9 +82,10 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
     setBusy(true)
 
     try {
+      const normalizedCode = code.replace(/\s+/g, '')
       const result = await verifyRegistrationCode({
-        email: verificationEmail,
-        code: code.trim(),
+        email: verificationEmail.trim().toLowerCase(),
+        code: normalizedCode,
       })
       onVerified({ token: result.token, user: result.user })
     } catch (verificationError) {
@@ -82,7 +103,7 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
     setBusy(true)
 
     try {
-      const result = await resendRegistrationCode(verificationEmail)
+      const result = await resendRegistrationCode(verificationEmail.trim().toLowerCase())
       setMessage(result.message)
     } catch (resendError) {
       setError(resendError instanceof Error
@@ -98,10 +119,12 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
       <section className="flex items-center justify-center px-6 py-12 sm:px-12 lg:px-16">
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-10 place-items-center rounded-lg bg-blue-600 text-white">
-              <Building2 size={20} strokeWidth={2} />
+            <span style={{ backgroundColor: barangays.find((barangay) => String(barangay.id) === barangayId)?.primary_color ?? '#2563eb' }} className="grid size-10 place-items-center overflow-hidden rounded-lg text-white">
+              {barangays.find((barangay) => String(barangay.id) === barangayId)?.logo_url
+                ? <img src={barangays.find((barangay) => String(barangay.id) === barangayId)?.logo_url ?? ''} alt="Selected barangay logo" className="size-full bg-white object-contain" />
+                : <Building2 size={20} strokeWidth={2} />}
             </span>
-            <p className="text-sm font-semibold text-slate-900">Barangay Citizen Services Portal</p>
+            <div><p className="text-sm font-semibold text-slate-900">{barangays.find((barangay) => String(barangay.id) === barangayId)?.name ?? 'Barangay Citizen Services Portal'}</p><p className="text-xs text-slate-500">{barangays.find((barangay) => String(barangay.id) === barangayId)?.municipality ?? 'Bulacan'}</p></div>
           </div>
 
           <div className="mt-10">
@@ -162,6 +185,23 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
                   />
                 </label>
               </div>
+
+              <label className="field-label">
+                Barangay in Bulacan
+                <select
+                  className="input mt-1.5"
+                  value={barangayId}
+                  onChange={(event) => setBarangayId(event.target.value)}
+                  required
+                  disabled={barangays.length === 0}
+                >
+                  <option value="" disabled>{barangays.length === 0 ? 'Loading barangays…' : 'Select your barangay'}</option>
+                  {barangays.map((barangay) => (
+                    <option key={barangay.id} value={barangay.id}>{barangay.municipality} — {barangay.name}</option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-xs font-normal text-slate-400">Select the barangay where you live.</span>
+              </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="field-label">
@@ -228,6 +268,18 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
                   minLength={8}
                   required
                 />
+              </label>
+
+              <label className="flex items-start gap-2.5 rounded-md border border-slate-200 bg-slate-50/60 px-2.5 py-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={acceptedLegal}
+                  onChange={() => setAcceptedLegal((value) => !value)}
+                  className="mt-0.5 size-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="leading-5">
+                  I agree to the <Link to="/terms" className="font-medium text-blue-600 hover:text-blue-800">Terms and Conditions</Link> and <Link to="/privacy" className="font-medium text-blue-600 hover:text-blue-800">Privacy Policy</Link>.
+                </span>
               </label>
 
               <button type="submit" disabled={busy} className="btn btn-primary w-full py-2.5">

@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, Megaphone, MapPinned, Phone, Settings2, Users } from 'lucide-react'
+import { Activity, MapPinned, Phone, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Alert, Card, PageHeader } from '../../components/ui'
+import AnnouncementManager, { type Announcement } from '../../components/shared/AnnouncementManager'
 import { adminCommunityApi } from '../../shared/api'
-
-type Announcement = {
-  id: number
-  title: string
-  body: string
-  type: string
-  severity: string
-  status: string
-  location: string | null
-}
 
 type Contact = {
   id: number
@@ -71,53 +62,46 @@ type ActivityItem = {
   metadata: Record<string, unknown> | null
 }
 
-type Setting = {
-  key: string
-  value: string | null
-  group: string
-}
-
 type CommunityData = {
-  announcements: Announcement[]
   contacts: Contact[]
   centers: Center[]
   households: Household[]
   complaints: Complaint[]
   assistance: Aid[]
   logs: ActivityItem[]
-  settings: Setting[]
+}
+
+const adminAnnouncementApi = {
+  get: () => adminCommunityApi.getAnnouncements<Announcement>(),
+  create: adminCommunityApi.createAnnouncement,
+  update: adminCommunityApi.updateAnnouncement,
+  remove: adminCommunityApi.deleteAnnouncement,
 }
 
 async function fetchCommunityData(): Promise<CommunityData> {
   const [
-    announcementResult,
     contactsResult,
     centersResult,
     householdResult,
     complaintResult,
     aidResult,
     logResult,
-    settingsResult,
   ] = await Promise.all([
-    adminCommunityApi.getAnnouncements<Announcement>(),
     adminCommunityApi.getEmergencyContacts<Contact>(),
     adminCommunityApi.getEvacuationCenters<Center>(),
     adminCommunityApi.getHouseholds<Household>(),
     adminCommunityApi.getComplaints<Complaint>(),
     adminCommunityApi.getAssistanceRequests<Aid>(),
     adminCommunityApi.getActivityLogs<ActivityItem>(),
-    adminCommunityApi.getSettings<Setting>(),
   ])
 
   return {
-    announcements: announcementResult.data,
     contacts: contactsResult.data,
     centers: centersResult.data,
     households: householdResult.data,
     complaints: complaintResult.data,
     assistance: aidResult.data,
     logs: logResult.data,
-    settings: settingsResult.data,
   }
 }
 
@@ -153,27 +137,23 @@ function Rows({ items, empty }: {
 }
 
 export default function CommunityManagement() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [centers, setCenters] = useState<Center[]>([])
   const [households, setHouseholds] = useState<Household[]>([])
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [assistance, setAssistance] = useState<Aid[]>([])
   const [logs, setLogs] = useState<ActivityItem[]>([])
-  const [settings, setSettings] = useState<Setting[]>([])
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
 
   const applyCommunityData = useCallback((data: CommunityData) => {
-    setAnnouncements(data.announcements)
     setContacts(data.contacts)
     setCenters(data.centers)
     setHouseholds(data.households)
     setComplaints(data.complaints)
     setAssistance(data.assistance)
     setLogs(data.logs)
-    setSettings(data.settings)
   }, [])
 
   async function load() {
@@ -207,19 +187,6 @@ export default function CommunityManagement() {
     }
   }
 
-  function createAnnouncement(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    void submit(() => adminCommunityApi.createAnnouncement({
-      title: form.get('title'),
-      body: form.get('body'),
-      type: form.get('type'),
-      severity: form.get('severity'),
-      status: form.get('status'),
-      location: form.get('location'),
-    }), 'Advisory saved.')
-  }
-
   async function createContact(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formElement = event.currentTarget
@@ -249,16 +216,6 @@ export default function CommunityManagement() {
     if (saved) formElement.reset()
   }
 
-  function saveSetting(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    void submit(() => adminCommunityApi.saveSetting({
-      key: form.get('key'),
-      value: form.get('value'),
-      group: form.get('group'),
-    }), 'Setting saved.')
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -274,56 +231,7 @@ export default function CommunityManagement() {
       )}
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <Panel title="Public advisories & evacuation protocols" icon={Megaphone}>
-          <form className="grid gap-3 border-b border-slate-100 p-5" onSubmit={createAnnouncement}>
-            <input required name="title" placeholder="Advisory title" className="input" />
-            <textarea required name="body" placeholder="Public message" className="input resize-y" rows={3} />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <select name="type" className="input">
-                <option value="announcement">Announcement</option>
-                <option value="advisory">Advisory</option>
-                <option value="emergency">Emergency</option>
-                <option value="evacuation_protocol">Evacuation protocol</option>
-              </select>
-              <select name="severity" className="input">
-                <option>info</option>
-                <option>warning</option>
-                <option>urgent</option>
-                <option>critical</option>
-              </select>
-              <select name="status" className="input">
-                <option value="draft">Draft</option>
-                <option value="published">Publish now</option>
-              </select>
-            </div>
-            <input name="location" placeholder="Affected area (optional)" className="input" />
-            <button disabled={busy} className="btn btn-primary btn-sm justify-self-start">Publish / save draft</button>
-          </form>
-          <Rows
-            empty="No advisories yet."
-            items={announcements.map((item) => (
-              <div key={item.id} className="flex items-start justify-between gap-3 px-5 py-3.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-800">{item.title}</p>
-                  <p className="mt-0.5 text-xs text-slate-500 capitalize">{item.type} · {item.severity} · {item.status}</p>
-                </div>
-                <button
-                  disabled={busy}
-                  onClick={() => submit(() => adminCommunityApi.updateAnnouncement(item.id, {
-                    title: item.title,
-                    body: item.body,
-                    type: item.type,
-                    severity: item.severity,
-                    status: item.status === 'published' ? 'archived' : 'published',
-                  }), 'Advisory status updated.')}
-                  className="btn btn-soft btn-sm shrink-0"
-                >
-                  {item.status === 'published' ? 'Archive' : 'Publish'}
-                </button>
-              </div>
-            ))}
-          />
-        </Panel>
+        <AnnouncementManager api={adminAnnouncementApi} />
 
         <Panel title="Emergency contacts" icon={Phone}>
           <form className="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-2" onSubmit={createContact}>
@@ -422,23 +330,6 @@ export default function CommunityManagement() {
               )}
             </div>
           </div>
-        </Panel>
-
-        <Panel title="System settings" icon={Settings2}>
-          <form className="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-3" onSubmit={saveSetting}>
-            <input required name="key" placeholder="Setting key" className="input" />
-            <input name="value" placeholder="Setting value" className="input" />
-            <input name="group" placeholder="Group" className="input" />
-            <button disabled={busy} className="btn btn-primary btn-sm justify-self-start sm:col-span-3">Save setting</button>
-          </form>
-          <Rows
-            empty="No custom settings."
-            items={settings.map((item) => (
-              <p key={item.key} className="px-5 py-3 text-xs text-slate-600">
-                <span className="font-medium text-slate-800">{item.group}.{item.key}</span> = {item.value}
-              </p>
-            ))}
-          />
         </Panel>
 
         <Panel title="Audit / activity log" icon={Activity}>

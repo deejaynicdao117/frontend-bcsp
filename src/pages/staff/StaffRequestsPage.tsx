@@ -9,12 +9,25 @@ import {
 import { useSession } from '../../shared/session-context'
 import type { DocumentRequest } from '../../shared/types'
 
-const statuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_release', 'completed']
+const statuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_pickup', 'released']
+
+function statusLabel(status: string) {
+  return ({ ready_for_pickup: 'Ready for pickup' } as Record<string, string>)[status] ?? status.replaceAll('_', ' ')
+}
+
+function localToday() {
+  const now = new Date()
+  const offset = now.getTimezoneOffset() * 60_000
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
+}
 
 export default function StaffRequestsPage() {
   const { session } = useSession()
   const [requests, setRequests] = useState<DocumentRequest[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<Record<number, string>>({})
+  const [rejectionReasons, setRejectionReasons] = useState<Record<number, string>>({})
+  const [pickupDates, setPickupDates] = useState<Record<number, string>>({})
+  const [releasedDates, setReleasedDates] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -42,13 +55,34 @@ export default function StaffRequestsPage() {
   }
 
   async function updateStatus(request: DocumentRequest) {
+    const status = selectedStatuses[request.id] ?? request.status
+    const rejectionReason = rejectionReasons[request.id] ?? request.rejection_reason ?? ''
+    const pickupDate = pickupDates[request.id] ?? request.ready_for_pickup_at ?? localToday()
+    const releasedDate = releasedDates[request.id] ?? request.released_at ?? localToday()
+
+    if (status === 'rejected' && !rejectionReason.trim()) {
+      setError('Enter a reason before rejecting this request.')
+      return
+    }
+    if (status === 'ready_for_pickup' && !pickupDate) {
+      setError('Choose the ready-for-pickup date.')
+      return
+    }
+    if (status === 'released' && !releasedDate) {
+      setError('Choose the release date.')
+      return
+    }
+
     setBusy(true)
     setError('')
     setMessage('')
 
     try {
       await updateStaffDocumentRequest(request.id, {
-        status: selectedStatuses[request.id] ?? request.status,
+        status,
+        ...(status === 'rejected' ? { rejection_reason: rejectionReason.trim() } : {}),
+        ...(status === 'ready_for_pickup' ? { ready_for_pickup_at: pickupDate } : {}),
+        ...(status === 'released' ? { released_at: releasedDate } : {}),
       })
       await loadRequests()
       setMessage(`Request ${request.tracking_number} was updated.`)
@@ -136,7 +170,7 @@ export default function StaffRequestsPage() {
             onChange={(event) => setStatusFilter(event.target.value)}
           >
             <option value="all">All statuses</option>
-            {statuses.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+            {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
           </select>
         </div>
         {loading ? (
@@ -148,7 +182,7 @@ export default function StaffRequestsPage() {
             <p className="mt-1 text-sm text-slate-500">{requests.length === 0 ? 'New resident submissions will appear here.' : 'Try adjusting the search or status filter.'}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="table-head">
                 <tr>
@@ -169,15 +203,43 @@ export default function StaffRequestsPage() {
                     <td className="table-td max-w-48 text-slate-500">{request.purpose}</td>
                     <td className="table-td"><StatusBadge status={request.status} /></td>
                     <td className="table-td">
-                      <div className="flex min-w-80 items-center gap-2">
+                      <div className="flex min-w-80 flex-wrap items-center gap-2">
                         <select
                           aria-label={`Status for ${request.tracking_number}`}
                           className="input py-1.5 text-xs"
                           value={selectedStatuses[request.id] ?? request.status}
                           onChange={(event) => setSelectedStatuses((current) => ({ ...current, [request.id]: event.target.value }))}
                         >
-                          {statuses.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+                          {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
                         </select>
+                        {(selectedStatuses[request.id] ?? request.status) === 'rejected' && (
+                          <input
+                            aria-label={`Rejection reason for ${request.tracking_number}`}
+                            className="input min-w-48 py-1.5 text-xs"
+                            placeholder="Reason for rejection"
+                            maxLength={1000}
+                            value={rejectionReasons[request.id] ?? request.rejection_reason ?? ''}
+                            onChange={(event) => setRejectionReasons((current) => ({ ...current, [request.id]: event.target.value }))}
+                          />
+                        )}
+                        {(selectedStatuses[request.id] ?? request.status) === 'ready_for_pickup' && (
+                          <input
+                            aria-label={`Pickup date for ${request.tracking_number}`}
+                            className="input min-w-36 py-1.5 text-xs"
+                            type="date"
+                            value={pickupDates[request.id] ?? request.ready_for_pickup_at ?? localToday()}
+                            onChange={(event) => setPickupDates((current) => ({ ...current, [request.id]: event.target.value }))}
+                          />
+                        )}
+                        {(selectedStatuses[request.id] ?? request.status) === 'released' && (
+                          <input
+                            aria-label={`Release date for ${request.tracking_number}`}
+                            className="input min-w-36 py-1.5 text-xs"
+                            type="date"
+                            value={releasedDates[request.id] ?? request.released_at ?? localToday()}
+                            onChange={(event) => setReleasedDates((current) => ({ ...current, [request.id]: event.target.value }))}
+                          />
+                        )}
                         <button type="button" disabled={busy} onClick={() => updateStatus(request)} className="btn btn-soft btn-sm">
                           {busy ? 'Saving…' : 'Save'}
                           {!busy && <ArrowRight size={13} />}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, BadgeCheck, CheckCircle2, FileClock, FileText, Send, Sparkles } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CheckCircle2, Eye, FileClock, FileText, Send, Sparkles, X } from 'lucide-react'
 import { Alert, Card, StatusBadge } from '../../components/ui'
 import {
   createResidentDocumentRequest,
+  getResidentDocumentPreview,
   getDocumentTypes,
   getResidentDocumentRequests,
 } from '../../shared/api'
@@ -20,6 +21,8 @@ export default function ResidentRequestsPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewLoadingId, setPreviewLoadingId] = useState<number | null>(null)
 
   useEffect(() => {
     let active = true
@@ -41,6 +44,20 @@ export default function ResidentRequestsPage() {
 
     return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    if (!previewUrl) return
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreviewUrl(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape)
+      URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   async function loadResidentRequests() {
     const result = await getResidentDocumentRequests()
@@ -65,6 +82,19 @@ export default function ResidentRequestsPage() {
       setError(submitError instanceof Error ? submitError.message : 'Unable to submit the request.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function previewDocument(requestId: number) {
+    setError('')
+    setPreviewLoadingId(requestId)
+    try {
+      const documentBlob = await getResidentDocumentPreview(requestId)
+      setPreviewUrl(URL.createObjectURL(documentBlob))
+    } catch (previewError) {
+      setError(previewError instanceof Error ? previewError.message : 'Unable to preview this document.')
+    } finally {
+      setPreviewLoadingId(null)
     }
   }
 
@@ -192,8 +222,8 @@ export default function ResidentRequestsPage() {
             </a>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-sm">
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
+            <table className="w-full min-w-[860px] text-sm">
               <thead className="table-head">
                 <tr>
                   <th className="table-th">Tracking number</th>
@@ -201,6 +231,7 @@ export default function ResidentRequestsPage() {
                   <th className="table-th">Purpose</th>
                   <th className="table-th">Status</th>
                   <th className="table-th">Remarks</th>
+                  <th className="table-th">Document</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -209,8 +240,33 @@ export default function ResidentRequestsPage() {
                     <td className="table-td font-semibold text-blue-700">{request.tracking_number}</td>
                     <td className="table-td">{request.document_type?.name ?? 'Document'}</td>
                     <td className="table-td max-w-52 text-slate-500">{request.purpose}</td>
-                    <td className="table-td"><StatusBadge status={request.status} /></td>
-                    <td className="table-td text-slate-500">{request.remarks || '—'}</td>
+                    <td className="table-td">
+                      <StatusBadge status={request.status} />
+                      {request.status === 'ready_for_pickup' && request.ready_for_pickup_at && (
+                        <p className="mt-1 text-xs text-slate-500">Pickup: {formatRequestDate(request.ready_for_pickup_at)}</p>
+                      )}
+                      {request.status === 'released' && request.released_at && (
+                        <p className="mt-1 text-xs text-slate-500">Released: {formatRequestDate(request.released_at)}</p>
+                      )}
+                    </td>
+                    <td className="table-td max-w-56 text-slate-500">
+                      {request.status === 'rejected' && request.rejection_reason
+                        ? request.rejection_reason
+                        : request.remarks || '—'}
+                    </td>
+                    <td className="table-td">
+                      {request.generated_document_available && ['approved', 'ready_for_pickup', 'released'].includes(request.status) ? (
+                        <button
+                          type="button"
+                          disabled={previewLoadingId === request.id}
+                          onClick={() => void previewDocument(request.id)}
+                          className="btn btn-secondary btn-sm whitespace-nowrap"
+                        >
+                          <Eye size={14} />
+                          {previewLoadingId === request.id ? 'Loading…' : 'Preview only'}
+                        </button>
+                      ) : <span className="text-xs text-slate-400">Not available</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -218,8 +274,37 @@ export default function ResidentRequestsPage() {
           </div>
         )}
       </Card>
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-3 sm:p-6"
+          onClick={(event) => { if (event.target === event.currentTarget) setPreviewUrl(null) }}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="document-preview-title" className="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3 sm:px-6">
+              <div>
+                <h2 id="document-preview-title" className="text-sm font-semibold text-slate-900">Document preview</h2>
+                <p className="mt-0.5 text-xs text-slate-500">Preview only. Printing and downloading are not provided in the resident portal.</p>
+              </div>
+              <button type="button" aria-label="Close document preview" onClick={() => setPreviewUrl(null)} className="grid size-9 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+                <X size={18} />
+              </button>
+            </header>
+            <iframe
+              title="Read-only document preview"
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+              className="min-h-0 flex-1 bg-slate-100"
+            />
+          </section>
+        </div>
+      )}
     </div>
   )
+}
+
+function formatRequestDate(date: string) {
+  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(`${date.slice(0, 10)}T00:00:00`))
 }
 
 function ResidentMetric({

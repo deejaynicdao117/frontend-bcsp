@@ -18,7 +18,7 @@ type NewUser = {
   role: Role
 }
 
-const roleOptions: Role[] = ['admin', 'staff', 'resident']
+const roleOptions: Exclude<Role, 'platform_admin'>[] = ['admin', 'staff', 'resident']
 const emptyUsers: PortalUser[] = []
 
 export default function UsersPage() {
@@ -263,7 +263,7 @@ export default function UsersPage() {
         {filteredUsers.length === 0 ? (
           <EmptyState title="No matching accounts" hint="Try a different search or role filter." />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <table className="w-full min-w-[840px] text-sm">
               <thead className="table-head">
                 <tr>

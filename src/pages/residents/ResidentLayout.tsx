@@ -27,8 +27,12 @@ export default function ResidentLayout() {
                 <Menu size={19} />
               </button>
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-blue-700 uppercase">Resident portal</p>
+                <div className="flex items-center gap-2">
+                  {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-7 rounded-md bg-white object-contain" />}
+                  <div className="min-w-0"><p style={{ color: session.user.barangay?.primary_color ?? '#1d4ed8' }} className="truncate text-[10px] font-semibold tracking-[0.16em] uppercase">{session.user.barangay?.name ?? 'Resident portal'}</p>
                 <p className="truncate text-sm font-semibold text-slate-900">Welcome, {session.user.name}</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">

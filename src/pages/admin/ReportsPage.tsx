@@ -22,7 +22,7 @@ export default function ReportsPage() {
 
   const maxStatus = Math.max(1, ...reports.requests_by_status.map((item) => item.total))
   const maxMonth = Math.max(1, ...reports.monthly_requests.map((item) => item.total))
-  const completed = reports.requests_by_status.find((item) => item.status === 'completed')?.total ?? 0
+  const released = reports.requests_by_status.find((item) => item.status === 'released')?.total ?? 0
   const awaitingReview = reports.requests_by_status
     .filter((item) => ['pending', 'under_review'].includes(item.status))
     .reduce((total, item) => total + item.total, 0)
@@ -76,7 +76,7 @@ export default function ReportsPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <SummaryTile label="Total requests" value={reports.total_requests} icon={FileText} />
-        <SummaryTile label="Completed" value={completed} icon={FileCheck2} />
+        <SummaryTile label="Released" value={released} icon={FileCheck2} />
         <SummaryTile label="Awaiting review" value={awaitingReview} icon={FileClock} />
       </div>
     </div>

@@ -26,12 +26,25 @@ export async function getStaffDocumentRequests(): Promise<ListResponse<DocumentR
 
 export async function updateStaffDocumentRequest(
   id: number,
-  data: { status: string; remarks?: string },
+  data: {
+    status: string
+    remarks?: string
+    rejection_reason?: string
+    ready_for_pickup_at?: string
+    released_at?: string
+  },
 ): Promise<{ data: DocumentRequest }> {
   const response = await apiClient.put<{ data: DocumentRequest }>(
     `/staff/document-requests/${id}`,
     data,
   )
+  return response.data
+}
+
+export async function getResidentDocumentPreview(id: number): Promise<Blob> {
+  const response = await apiClient.get<Blob>(`/resident/document-requests/${id}/preview`, {
+    responseType: 'blob',
+  })
   return response.data
 }
 

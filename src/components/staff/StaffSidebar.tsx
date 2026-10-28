@@ -3,6 +3,7 @@ import {
   Building2,
   ClipboardList,
   HeartHandshake,
+  Megaphone,
   LogOut,
   X,
 } from 'lucide-react'
@@ -20,6 +21,12 @@ const pages = [
     label: 'Request queue',
     description: 'Process document requests',
     icon: ClipboardList,
+  },
+  {
+    to: '/staff/announcements',
+    label: 'Announcements',
+    description: 'Publish community notices',
+    icon: Megaphone,
   },
   {
     to: '/staff/community',

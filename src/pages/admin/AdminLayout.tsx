@@ -105,6 +105,10 @@ export default function AdminLayout() {
             </button>
             <div className="min-w-0">
             <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+              {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-6 rounded bg-white object-contain" />}
+              <span className="truncate">{session.user.barangay?.name ?? 'Barangay administration'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
               <span>Administration</span>
               <span className="text-slate-300">/</span>
               <span className="truncate text-blue-700">{meta.title}</span>

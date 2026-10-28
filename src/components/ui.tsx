@@ -115,8 +115,10 @@ export function Spinner({ label }: { label: string }) {
 
 const statusTones: Record<string, string> = {
   approved: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
+  released: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
   completed: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
   ready_for_release: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
+  ready_for_pickup: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
   verified: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
   resolved: 'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
   rejected: 'bg-rose-50 text-rose-700 ring-rose-200/80',
