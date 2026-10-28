@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { BadgeCheck, Building2, CircleX, RotateCcw, Save, ShieldPlus } from 'lucide-react'
 import { Alert, Card, Spinner } from '../../components/ui'
 import {
+  createBarangayWorkspace,
   createBarangayWorkspaceUser,
   getPlatformBarangays,
   importDefaultBarangayWorkspace,
@@ -20,6 +21,18 @@ export default function BarangaysPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [logo, setLogo] = useState<File | null>(null)
+  const [newBarangayForm, setNewBarangayForm] = useState({
+    psgc_code: '',
+    name: '',
+    municipality: '',
+    province: 'Bulacan',
+    contact_email: '',
+    contact_phone: '',
+    office_address: '',
+    primary_color: '#2563eb',
+    is_active: '1',
+  })
+  const [newBarangayLogo, setNewBarangayLogo] = useState<File | null>(null)
   const [adminForm, setAdminForm] = useState({ name: '', email: '', password: '', role: 'admin' as 'admin' | 'staff' })
 
   useEffect(() => {
@@ -66,6 +79,42 @@ export default function BarangaysPage() {
       setMessage(`${result.data.name} workspace saved.`)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save this workspace.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createBarangay(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    setMessage('')
+
+    const form = new FormData()
+    Object.entries(newBarangayForm).forEach(([key, value]) => {
+      if (value !== '') form.append(key, value)
+    })
+    if (newBarangayLogo) form.append('logo', newBarangayLogo)
+
+    try {
+      const result = await createBarangayWorkspace(form)
+      setBarangays((items) => [result.data, ...items])
+      setSelectedId(result.data.id)
+      setNewBarangayForm({
+        psgc_code: '',
+        name: '',
+        municipality: '',
+        province: 'Bulacan',
+        contact_email: '',
+        contact_phone: '',
+        office_address: '',
+        primary_color: '#2563eb',
+        is_active: '1',
+      })
+      setNewBarangayLogo(null)
+      setMessage(`${result.data.name} was added and is ready for resident registration.`)
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'Unable to create the barangay workspace.')
     } finally {
       setBusy(false)
     }
@@ -138,7 +187,24 @@ export default function BarangaysPage() {
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.4fr)]">
-        <Card className="min-w-0 self-start" title={`Malolos & Bulacan barangays (${filtered.length})`} subtitle="Requests received appear first; only approved, active workspaces show on resident registration">
+        <div className="space-y-5">
+          <Card title="Add a new barangay" subtitle="Create a Bulacan barangay workspace and make it available for resident registration.">
+            <form onSubmit={(event) => void createBarangay(event)} className="grid gap-3 p-4 sm:grid-cols-2">
+              <label className="field-label sm:col-span-2">PSGC code<input required value={newBarangayForm.psgc_code} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, psgc_code: event.target.value })} className="input mt-1.5" placeholder="e.g. BRGY-001" /></label>
+              <label className="field-label sm:col-span-2">Barangay name<input required value={newBarangayForm.name} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, name: event.target.value })} className="input mt-1.5" placeholder="Barangay San Jose" /></label>
+              <label className="field-label">Municipality<input required value={newBarangayForm.municipality} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, municipality: event.target.value })} className="input mt-1.5" placeholder="Bulakan" /></label>
+              <label className="field-label">Province<input value={newBarangayForm.province} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, province: event.target.value })} className="input mt-1.5" placeholder="Bulacan" /></label>
+              <label className="field-label">Email<input type="email" value={newBarangayForm.contact_email} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, contact_email: event.target.value })} className="input mt-1.5" placeholder="barangay@example.com" /></label>
+              <label className="field-label">Phone<input value={newBarangayForm.contact_phone} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, contact_phone: event.target.value })} className="input mt-1.5" placeholder="0917-123-4567" /></label>
+              <label className="field-label sm:col-span-2">Office address<input value={newBarangayForm.office_address} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, office_address: event.target.value })} className="input mt-1.5" placeholder="Barangay Hall, Main Street" /></label>
+              <label className="field-label">Portal color<input type="color" value={newBarangayForm.primary_color} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, primary_color: event.target.value })} className="input mt-1.5 h-11 p-1.5" /></label>
+              <label className="field-label">Status<select value={newBarangayForm.is_active} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, is_active: event.target.value })} className="input mt-1.5"><option value="1">Active</option><option value="0">Paused</option></select></label>
+              <label className="field-label sm:col-span-2">Logo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setNewBarangayLogo(event.target.files?.[0] ?? null)} className="input mt-1.5 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-blue-700" /></label>
+              <div className="sm:col-span-2"><button type="submit" disabled={busy} className="btn btn-primary">Add barangay</button></div>
+            </form>
+          </Card>
+
+          <Card className="min-w-0 self-start" title={`Malolos & Bulacan barangays (${filtered.length})`} subtitle="Requests received appear first; only approved, active workspaces show on resident registration">
           <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
             <input className="input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search barangay, municipality, PSGC…" aria-label="Search Bulacan barangays" />
             <select className="input sm:w-40" value={reviewFilter} onChange={(event) => setReviewFilter(event.target.value as typeof reviewFilter)} aria-label="Filter barangays by review status">
@@ -162,6 +228,7 @@ export default function BarangaysPage() {
             {filtered.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No matching barangay found.</p>}
           </div>
         </Card>
+        </div>
 
         {selected ? (
           <div className="space-y-5">
