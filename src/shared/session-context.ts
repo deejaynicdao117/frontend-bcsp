@@ -17,7 +17,7 @@ export function useSession(): SessionValue {
 }
 
 export function homePath(role: Role): string {
-  if (role === 'platform_admin') return '/platform/barangays'
+  if (role === 'platform_admin') return '/platform'
   if (role === 'admin') return '/admin'
   if (role === 'staff') return '/staff'
   return '/resident'

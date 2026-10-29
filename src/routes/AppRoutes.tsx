@@ -19,7 +19,10 @@ const NotificationsPage = lazy(() => import('../pages/admin/NotificationsPage'))
 const AdminProfilePage = lazy(() => import('../pages/admin/ProfilePage'))
 const BrowserNotificationListener = lazy(() => import('../components/shared/BrowserNotificationListener'))
 const PlatformLayout = lazy(() => import('../pages/platform/PlatformLayout'))
+const PlatformOverviewPage = lazy(() => import('../pages/platform/OverviewPage'))
 const PlatformBarangaysPage = lazy(() => import('../pages/platform/BarangaysPage'))
+const PlatformReportsPage = lazy(() => import('../pages/platform/ReportsPage'))
+const PlatformSettingsPage = lazy(() => import('../pages/platform/SettingsPage'))
 const StaffLayout = lazy(() => import('../pages/staff/StaffLayout'))
 const StaffRequestsPage = lazy(() => import('../pages/staff/StaffRequestsPage'))
 const StaffAnnouncementsPage = lazy(() => import('../pages/staff/AnnouncementsPage'))
@@ -72,7 +75,10 @@ function AuthenticatedRoutes() {
 
       <Route element={<RequireAuth role="platform_admin" />}>
         <Route path="/platform" element={<PlatformLayout />}>
+          <Route index element={<PlatformOverviewPage />} />
           <Route path="barangays" element={<PlatformBarangaysPage />} />
+          <Route path="reports" element={<PlatformReportsPage />} />
+          <Route path="settings" element={<PlatformSettingsPage />} />
         </Route>
       </Route>
 
