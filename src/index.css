@@ -5,6 +5,12 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   html,
   body,
   #root {
@@ -16,10 +22,16 @@
     min-width: 320px;
     min-height: 100vh;
     min-height: 100dvh;
+    overflow-x: hidden;
     font-family: var(--font-sans);
     background-color: var(--color-slate-50);
     color: var(--color-slate-900);
     -webkit-font-smoothing: antialiased;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
   }
 
   input,
@@ -27,6 +39,38 @@
   textarea,
   button {
     font: inherit;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn {
+    width: 100%;
+  }
+
+  .card {
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+  }
+
+  .table-th,
+  .table-td {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 

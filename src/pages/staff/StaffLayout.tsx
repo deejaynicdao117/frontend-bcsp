@@ -9,7 +9,7 @@ export default function StaffLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f4f8f7] lg:pl-68">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#f4f8f7] lg:pl-68">
       <StaffSidebar
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -18,8 +18,8 @@ export default function StaffLayout() {
 
       <div className="min-h-screen min-w-0 flex-1">
         <header className="sticky top-0 z-20 border-b border-teal-950/10 bg-white/95 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <div className="flex min-w-0 items-center gap-3">
+          <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <button
                 type="button"
                 aria-label={menuOpen ? 'Close staff navigation' : 'Open staff navigation'}
@@ -30,11 +30,12 @@ export default function StaffLayout() {
               >
                 <Menu size={19} />
               </button>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2">
                   {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-7 rounded-md bg-white object-contain" />}
-                  <div className="min-w-0"><p style={{ color: session.user.barangay?.primary_color ?? '#0f766e' }} className="truncate text-[10px] font-semibold tracking-[0.14em] uppercase">{session.user.barangay?.name ?? 'Staff workspace'}</p>
-                <p className="truncate text-sm font-semibold text-slate-900">{session.user.name}</p>
+                  <div className="min-w-0">
+                    <p style={{ color: session.user.barangay?.primary_color ?? '#0f766e' }} className="truncate text-[10px] font-semibold tracking-[0.14em] uppercase">{session.user.barangay?.name ?? 'Staff workspace'}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900">{session.user.name}</p>
                   </div>
                 </div>
               </div>
@@ -45,8 +46,10 @@ export default function StaffLayout() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1440px] space-y-7 px-4 py-7 sm:px-6 sm:py-9 lg:px-9">
-          <Outlet />
+        <div className="mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 sm:py-9 lg:px-9">
+          <div className="min-w-0">
+            <Outlet />
+          </div>
         </div>
       </div>
     </main>

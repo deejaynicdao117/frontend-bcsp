@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { BadgeCheck, Building2, LogOut, X } from 'lucide-react'
+import { BadgeCheck, BarChart3, Building2, LayoutDashboard, LogOut, Settings, X } from 'lucide-react'
 import { useSession } from '../../shared/session-context'
 
 type PlatformSidebarProps = {
@@ -49,7 +49,18 @@ export default function PlatformSidebar({ isOpen, onClose, onLogout }: PlatformS
         </div>
 
         <nav aria-label="Platform navigation" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 lg:px-4">
-          <p className="hidden px-3 pt-2 pb-2 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase lg:block">Manage workspaces</p>
+          <p className="hidden px-3 pt-2 pb-2 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase lg:block">Portal controls</p>
+
+          <NavLink
+            to="/platform"
+            end
+            onClick={onClose}
+            className={({ isActive }) => `group relative flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition lg:w-full ${isActive ? 'bg-blue-500/15 text-blue-100 ring-1 ring-inset ring-blue-400/20' : 'text-slate-400 hover:bg-white/[0.055] hover:text-slate-100'}`}
+          >
+            <LayoutDashboard size={17} strokeWidth={1.8} className="shrink-0 opacity-90" />
+            <span className="truncate">Overview</span>
+          </NavLink>
+
           <NavLink
             to="/platform/barangays"
             onClick={onClose}
@@ -57,6 +68,24 @@ export default function PlatformSidebar({ isOpen, onClose, onLogout }: PlatformS
           >
             <BadgeCheck size={17} strokeWidth={1.8} className="shrink-0 opacity-90" />
             <span className="truncate">Barangay onboarding</span>
+          </NavLink>
+
+          <NavLink
+            to="/platform/reports"
+            onClick={onClose}
+            className={({ isActive }) => `group relative flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition lg:w-full ${isActive ? 'bg-blue-500/15 text-blue-100 ring-1 ring-inset ring-blue-400/20' : 'text-slate-400 hover:bg-white/[0.055] hover:text-slate-100'}`}
+          >
+            <BarChart3 size={17} strokeWidth={1.8} className="shrink-0 opacity-90" />
+            <span className="truncate">Reports</span>
+          </NavLink>
+
+          <NavLink
+            to="/platform/settings"
+            onClick={onClose}
+            className={({ isActive }) => `group relative flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition lg:w-full ${isActive ? 'bg-blue-500/15 text-blue-100 ring-1 ring-inset ring-blue-400/20' : 'text-slate-400 hover:bg-white/[0.055] hover:text-slate-100'}`}
+          >
+            <Settings size={17} strokeWidth={1.8} className="shrink-0 opacity-90" />
+            <span className="truncate">Settings</span>
           </NavLink>
         </nav>
 

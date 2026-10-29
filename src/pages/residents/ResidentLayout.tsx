@@ -9,13 +9,13 @@ export default function ResidentLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f3f6fb] lg:pl-68">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#f3f6fb] lg:pl-68">
       <ResidentSidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} onLogout={onLogout} />
 
       <div className="min-h-screen min-w-0 flex-1">
         <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl">
-          <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6 lg:px-9">
-            <div className="flex min-w-0 items-center gap-3">
+          <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-6 lg:px-9">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <button
                 type="button"
                 aria-label={menuOpen ? 'Close resident navigation' : 'Open resident navigation'}
@@ -26,11 +26,12 @@ export default function ResidentLayout() {
               >
                 <Menu size={19} />
               </button>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2">
                   {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-7 rounded-md bg-white object-contain" />}
-                  <div className="min-w-0"><p style={{ color: session.user.barangay?.primary_color ?? '#1d4ed8' }} className="truncate text-[10px] font-semibold tracking-[0.16em] uppercase">{session.user.barangay?.name ?? 'Resident portal'}</p>
-                <p className="truncate text-sm font-semibold text-slate-900">Welcome, {session.user.name}</p>
+                  <div className="min-w-0">
+                    <p style={{ color: session.user.barangay?.primary_color ?? '#1d4ed8' }} className="truncate text-[10px] font-semibold tracking-[0.16em] uppercase">{session.user.barangay?.name ?? 'Resident portal'}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900">Welcome, {session.user.name}</p>
                   </div>
                 </div>
               </div>
@@ -43,8 +44,10 @@ export default function ResidentLayout() {
           </div>
         </header>
 
-        <div className="resident-theme mx-auto max-w-[1440px] space-y-7 px-4 py-6 sm:px-6 sm:py-8 lg:px-9">
-          <Outlet />
+        <div className="resident-theme mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 sm:py-8 lg:px-9">
+          <div className="min-w-0">
+            <Outlet />
+          </div>
         </div>
       </div>
     </main>

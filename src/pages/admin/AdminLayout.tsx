@@ -82,7 +82,7 @@ export default function AdminLayout() {
   )) ?? pageMeta[0]
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
       <Sidebar
         onLogout={onLogout}
         notificationCount={notifications.length}
@@ -91,8 +91,8 @@ export default function AdminLayout() {
       />
 
       <div className="min-h-screen min-w-0 flex-1">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               aria-label="Open navigation menu"
@@ -103,17 +103,17 @@ export default function AdminLayout() {
             >
               <Menu size={19} />
             </button>
-            <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
-              {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-6 rounded bg-white object-contain" />}
-              <span className="truncate">{session.user.barangay?.name ?? 'Barangay administration'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
-              <span>Administration</span>
-              <span className="text-slate-300">/</span>
-              <span className="truncate text-blue-700">{meta.title}</span>
-            </div>
-            <p className="mt-0.5 hidden truncate text-xs text-slate-500 sm:block">{meta.description}</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+                {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-6 rounded bg-white object-contain" />}
+                <span className="truncate">{session.user.barangay?.name ?? 'Barangay administration'}</span>
+              </div>
+              <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+                <span className="truncate">Administration</span>
+                <span className="text-slate-300">/</span>
+                <span className="truncate text-blue-700">{meta.title}</span>
+              </div>
+              <p className="mt-1 hidden truncate text-xs text-slate-500 sm:block">{meta.description}</p>
             </div>
           </div>
 
@@ -149,12 +149,14 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1440px] space-y-7 px-4 py-6 sm:px-6 lg:px-9 lg:py-8">
+        <main className="mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 lg:px-9 lg:py-8">
           {notice && (
             <Alert tone="error" onDismiss={() => setNotice('')}>{notice}</Alert>
           )}
 
-          <Outlet />
+          <div className="min-w-0">
+            <Outlet />
+          </div>
 
           <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-5 text-[11px] text-slate-400">
             <span>Barangay Citizen Services Portal</span>

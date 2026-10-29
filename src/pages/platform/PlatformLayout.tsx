@@ -11,12 +11,12 @@ export default function PlatformLayout() {
   const pageTitle = location.pathname.startsWith('/platform/barangays') ? 'Barangay onboarding' : 'Platform control'
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
       <PlatformSidebar isOpen={navigationOpen} onClose={() => setNavigationOpen(false)} onLogout={onLogout} />
 
       <div className="min-h-screen min-w-0 flex-1">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               aria-label="Open platform navigation"
@@ -27,16 +27,16 @@ export default function PlatformLayout() {
             >
               <Menu size={19} />
             </button>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
                 <span className="truncate">Barangay services platform</span>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
-                <span>Platform administration</span>
+              <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+                <span className="truncate">Platform administration</span>
                 <span className="text-slate-300">/</span>
                 <span className="truncate text-blue-700">{pageTitle}</span>
               </div>
-              <p className="mt-0.5 hidden truncate text-xs text-slate-500 sm:block">Manage approved barangay workspaces and resident registration access.</p>
+              <p className="mt-1 hidden truncate text-xs text-slate-500 sm:block">Manage approved barangay workspaces and resident registration access.</p>
             </div>
           </div>
 
@@ -51,8 +51,10 @@ export default function PlatformLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1440px] space-y-7 px-4 py-6 sm:px-6 lg:px-9 lg:py-8">
-          <Outlet />
+        <main className="mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 lg:px-9 lg:py-8">
+          <div className="min-w-0">
+            <Outlet />
+          </div>
           <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-5 text-[11px] text-slate-400">
             <span>Barangay Citizen Services Portal</span>
             <span>Platform administration · Local time {new Intl.DateTimeFormat('en-PH', { timeStyle: 'short' }).format(new Date())}</span>
