@@ -9,12 +9,12 @@ async function get<T>(path: string): Promise<T> {
   return response.data
 }
 
-async function post<T>(path: string, data?: object): Promise<T> {
+async function post<T>(path: string, data?: object | FormData): Promise<T> {
   const response = await apiClient.post<T>(path, data)
   return response.data
 }
 
-async function put<T>(path: string, data?: object): Promise<T> {
+async function put<T>(path: string, data?: object | FormData): Promise<T> {
   const response = await apiClient.put<T>(path, data)
   return response.data
 }
@@ -32,8 +32,8 @@ export const residentCommunityApi = {
   getEmergencyContacts: <T>() => get<Envelope<T[]>>('/community/emergency-contacts'),
   getEvacuationCenters: <T>() => get<Envelope<T[]>>('/community/evacuation-centers'),
   updateProfile: (data: object) => put('/resident/profile', data),
-  submitComplaint: (data: object) => post('/resident/complaints', data),
-  submitAssistanceRequest: (data: object) => post('/resident/disaster-assistance', data),
+  submitComplaint: (data: object | FormData) => post('/resident/complaints', data),
+  submitAssistanceRequest: (data: object | FormData) => post('/resident/disaster-assistance', data),
   resendVerificationEmail: () => post('/auth/email/verification-notification'),
 }
 

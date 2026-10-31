@@ -1,16 +1,33 @@
+import { useQuery } from '@tanstack/react-query'
 import { BellRing, Building2, ClipboardCheck, ShieldCheck } from 'lucide-react'
-import { Card, MetricCard } from '../../components/ui'
-
-const actions = [
-  { title: 'Barangay San Jose', detail: 'Registration access approved and live', status: 'Online' },
-  { title: 'Barangay Poblacion', detail: 'Pending onboarding review', status: 'Review' },
-  { title: 'Barangay Tibagan', detail: 'Logo and profile updated today', status: 'Updated' },
-]
+import { Link } from 'react-router-dom'
+import { Card, MetricCard, Spinner } from '../../components/ui'
+import { Alert } from '../../components/ui'
+import { getPlatformDashboard } from '../../shared/api'
 
 export default function OverviewPage() {
+  const dashboardQuery = useQuery({
+    queryKey: ['platform', 'dashboard'],
+    queryFn: async () => {
+      const result = await getPlatformDashboard()
+      return result.data
+    },
+  })
+
+  if (dashboardQuery.isPending) return <Spinner label="Loading platform dashboard…" />
+  if (dashboardQuery.error) {
+    const message = dashboardQuery.error instanceof Error
+      ? dashboardQuery.error.message
+      : 'Unable to load the platform dashboard.'
+
+    return <Alert tone="error">{message}</Alert>
+  }
+
+  const dashboard = dashboardQuery.data
+
   return (
     <div className="space-y-6">
-      <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-blue-700 to-slate-900 p-5 text-white shadow-lg shadow-blue-950/10 sm:p-8">
+      <header className="relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-indigo-700 via-blue-700 to-slate-900 p-5 text-white shadow-lg shadow-blue-950/10 sm:p-8">
         <div className="absolute -right-12 -top-24 -z-10 size-72 rounded-full bg-cyan-300/15 blur-3xl" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -28,83 +45,45 @@ export default function OverviewPage() {
       </header>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Active barangays" value={18} icon={Building2} />
-        <MetricCard label="Portal users" value={1284} icon={ShieldCheck} />
-        <MetricCard label="Open actions" value={23} icon={BellRing} />
-        <MetricCard label="Verified requests" value={96} icon={ClipboardCheck} />
+        <MetricCard label="Active barangays" value={dashboard.active_barangays} icon={Building2} />
+        <MetricCard label="Total barangays" value={dashboard.total_barangays} icon={ClipboardCheck} />
+        <MetricCard label="Portal users" value={dashboard.total_users} icon={ShieldCheck} />
+        <MetricCard label="Open actions" value={dashboard.pending_onboarding + dashboard.pending_requests} icon={BellRing} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-        <Card title="Operational summary" subtitle="Current performance across all barangay workspaces" padded>
-          <div className="space-y-5">
-            <SummaryRow label="Barangay onboarding" value={82} color="bg-indigo-500" />
-            <SummaryRow label="Resident registrations" value={71} color="bg-blue-500" />
-            <SummaryRow label="Document processing" value={89} color="bg-emerald-500" />
-            <SummaryRow label="Emergency alerts" value={63} color="bg-amber-500" />
+        <Card title="Platform totals" subtitle="Live records across every barangay workspace" padded>
+          <div className="divide-y divide-slate-100">
+            <SummaryRow label="Resident accounts" value={dashboard.resident_count} />
+            <SummaryRow label="Document requests" value={dashboard.total_requests} />
+            <SummaryRow label="Requests submitted this month" value={dashboard.requests_this_month} />
+            <SummaryRow label="Requests awaiting action" value={dashboard.pending_requests} />
           </div>
         </Card>
 
-        <Card title="Priority actions" subtitle="Items that need attention this week" padded>
+        <Card title="Priority actions" subtitle="Items that currently need platform review" padded>
           <div className="space-y-3">
-            {actions.map((action) => (
-              <div key={action.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{action.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{action.detail}</p>
-                  </div>
-                  <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 ring-1 ring-slate-200">{action.status}</span>
-                </div>
-              </div>
-            ))}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">{dashboard.pending_onboarding} barangay onboarding requests</p>
+              <p className="mt-1 text-xs leading-5 text-amber-800">Review pending workspaces and approve access when verified.</p>
+              <Link to="/platform/barangays" className="mt-3 inline-flex text-xs font-semibold text-amber-900 underline underline-offset-2">Review barangays</Link>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm font-semibold text-blue-900">{dashboard.pending_requests} document requests awaiting action</p>
+              <p className="mt-1 text-xs leading-5 text-blue-800">These counts include pending and under-review requests across workspaces.</p>
+            </div>
           </div>
         </Card>
       </div>
-
-      <Card title="Latest platform activity" subtitle="Recent changes across the barangay portal" padded>
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Area</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Updated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              <tr>
-                <td className="px-4 py-3 text-slate-700">Barangay platform settings</td>
-                <td className="px-4 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Healthy</span></td>
-                <td className="px-4 py-3 text-slate-500">2 hours ago</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-slate-700">Resident verification queue</td>
-                <td className="px-4 py-3"><span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">In review</span></td>
-                <td className="px-4 py-3 text-slate-500">5 hours ago</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-slate-700">New barangay workspace</td>
-                <td className="px-4 py-3"><span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">Pending</span></td>
-                <td className="px-4 py-3 text-slate-500">Today</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   )
 }
 
-function SummaryRow({ label, value, color }: { label: string; value: number; color: string }) {
+function SummaryRow({ label, value }: { label: string; value: number }) {
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
+    <div className="flex items-center justify-between gap-4 py-3 text-sm">
         <span>{label}</span>
-        <span className="font-semibold text-slate-800">{value}%</span>
-      </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
-      </div>
+        <span className="font-semibold tabular-nums text-slate-800">{value.toLocaleString()}</span>
     </div>
   )
 }
