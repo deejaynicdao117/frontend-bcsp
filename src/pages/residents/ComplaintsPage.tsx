@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Megaphone, Send } from 'lucide-react'
+import { Megaphone, Send, ImagePlus, Camera } from 'lucide-react'
 import { Alert, Card, StatusBadge } from '../../components/ui'
 import ResidentPageHero from '../../components/resident/ResidentPageHero'
 import { residentCommunityApi } from '../../shared/api'
@@ -25,7 +25,7 @@ export default function ComplaintsPage() {
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ subject: '', description: '', location: '', purok: '' })
+  const [form, setForm] = useState({ subject: '', description: '', location: '', purok: '', photo: null })
 
   async function loadComplaints() {
     const response = await residentCommunityApi.getComplaints<Complaint>()
@@ -60,8 +60,15 @@ export default function ComplaintsPage() {
     setFeedback('')
 
     try {
-      await residentCommunityApi.submitComplaint(form)
-      setForm({ subject: '', description: '', location: '', purok: '' })
+      const formData = new FormData()
+      formData.append('subject', form.subject)
+      formData.append('description', form.description)
+      formData.append('location', form.location)
+      formData.append('purok', form.purok)
+      if (form.photo) formData.append('photo', form.photo)
+
+      await residentCommunityApi.submitComplaint(formData)
+      setForm({ subject: '', description: '', location: '', purok: '', photo: null })
       await loadComplaints()
       setFeedback('Complaint sent. Staff will review it soon.')
     } catch (submitError) {
@@ -121,6 +128,38 @@ export default function ComplaintsPage() {
               onChange={(event) => setForm({ ...form, purok: event.target.value })}
             />
           </label>
+
+          <label className="field-label">Photo</label>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => fileInput.current?.click()} className="btn btn-secondary py-2.5">
+              <Camera size={16} />
+              Take photo
+            </button>
+            <button type="button" onClick={() => galleryInput.current?.click()} className="btn btn-secondary py-2.5">
+              <ImagePlus size={16} />
+              Choose photo
+            </button>
+          </div>
+          <input ref={fileInput} type="file" accept="image/*" className="Qhidden" onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) {
+              const reader = new FileReader()
+              reader.onload = (e) => setForm({ ...form, photo: file })
+              reader.readAsDataURL(file)
+            }
+          }} />
+          <input ref={galleryInput} type="file" accept="image/png,image/jpeg,image/webp" className="Qhidden" onChange={(event) => {
+            const file = event.target.files?.[0]}
+            if (file) {
+              const reader = new FileReader()
+              reader.onload = (e) => setForm({ ...form, photo: file })
+              reader.readAsDataURL(file)
+            }
+          }} />
+          {form.photo && (
+            <img src={form.photo} alt="Preview" className="mt-2 max-w-full max-h-48 rounded-lg" />
+          )}
+          <p className="text-xs text-slate-500 mt-1">Optional incident photo. PNG, JPG, or WebP up to 2 MB.</p>
 
           <div className="md:col-span-2">
             <button type="submit" disabled={busy} className="btn btn-primary py-2.5">

@@ -244,7 +244,7 @@ export default function StaffRequestsPage() {
                           {busy ? 'Saving…' : 'Save'}
                           {!busy && <ArrowRight size={13} />}
                         </button>
-                        {request.generated_document_available && (
+                        {request.generated_document_available && request.status !== 'rejected' && (
                           <button
                             type="button"
                             disabled={downloadingId === request.id}

@@ -265,7 +265,11 @@ export default function ResidentRequestsPage() {
                           <Eye size={14} />
                           {previewLoadingId === request.id ? 'Loading…' : 'Preview only'}
                         </button>
-                      ) : <span className="text-xs text-slate-400">Not available</span>}
+                      ) : (
+                        <span className="text-xs text-slate-400">
+                          {request.status === 'rejected' ? 'Unavailable — request rejected' : 'Not available'}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

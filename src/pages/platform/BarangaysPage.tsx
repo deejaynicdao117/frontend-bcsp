@@ -51,6 +51,18 @@ export default function BarangaysPage() {
   }, [])
 
   const selected = barangays.find((barangay) => barangay.id === selectedId) ?? null
+  const normalizedPsgcCode = newBarangayForm.psgc_code.trim().toUpperCase()
+  const normalizedName = newBarangayForm.name.trim().toLowerCase()
+  const normalizedMunicipality = newBarangayForm.municipality.trim().toLowerCase()
+  const possibleDuplicate = Boolean(normalizedPsgcCode || normalizedName)
+    && barangays.some((barangay) => (
+      (Boolean(normalizedPsgcCode) && barangay.psgc_code.trim().toUpperCase() === normalizedPsgcCode)
+      || (
+        Boolean(normalizedName && normalizedMunicipality)
+        && barangay.name.trim().toLowerCase() === normalizedName
+        && barangay.municipality.trim().toLowerCase() === normalizedMunicipality
+      )
+    ))
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     return barangays
@@ -90,10 +102,18 @@ export default function BarangaysPage() {
     setError('')
     setMessage('')
 
+    if (possibleDuplicate) {
+      setBusy(false)
+      return
+    }
+
     const form = new FormData()
     Object.entries(newBarangayForm).forEach(([key, value]) => {
       if (value !== '') form.append(key, value)
     })
+    form.set('psgc_code', normalizedPsgcCode)
+    form.set('name', newBarangayForm.name.trim())
+    form.set('municipality', newBarangayForm.municipality.trim())
     if (newBarangayLogo) form.append('logo', newBarangayLogo)
 
     try {
@@ -173,7 +193,7 @@ export default function BarangaysPage() {
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
       {(error || message) && <Alert tone={error ? 'error' : 'success'} onDismiss={() => { setError(''); setMessage('') }}>{error || message}</Alert>}
-      <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-blue-700 to-slate-900 p-5 text-white shadow-lg shadow-blue-950/10 sm:p-8">
+      <header className="relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-indigo-700 via-blue-700 to-slate-900 p-5 text-white shadow-lg shadow-blue-950/10 sm:p-8">
         <div className="absolute -right-12 -top-24 -z-10 size-72 rounded-full bg-cyan-300/15 blur-3xl" />
         <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-blue-100 uppercase"><Building2 size={15} /> Platform control</span>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Barangay onboarding</h1>
@@ -192,6 +212,14 @@ export default function BarangaysPage() {
             <form onSubmit={(event) => void createBarangay(event)} className="grid gap-3 p-4 sm:grid-cols-2">
               <label className="field-label sm:col-span-2">PSGC code<input required value={newBarangayForm.psgc_code} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, psgc_code: event.target.value })} className="input mt-1.5" placeholder="e.g. BRGY-001" /></label>
               <label className="field-label sm:col-span-2">Barangay name<input required value={newBarangayForm.name} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, name: event.target.value })} className="input mt-1.5" placeholder="Barangay San Jose" /></label>
+              {possibleDuplicate && (
+                <div className="sm:col-span-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 p-2.5 text-xs font-medium text-rose-700">
+                    <BadgeCheck size={12} className="text-rose-600" />
+                    <span>Possible duplicate detected — this PSGC code or barangay name and municipality already exists.</span>
+                  </div>
+                </div>
+              )}
               <label className="field-label">Municipality<input required value={newBarangayForm.municipality} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, municipality: event.target.value })} className="input mt-1.5" placeholder="Bulakan" /></label>
               <label className="field-label">Province<input value={newBarangayForm.province} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, province: event.target.value })} className="input mt-1.5" placeholder="Bulacan" /></label>
               <label className="field-label">Email<input type="email" value={newBarangayForm.contact_email} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, contact_email: event.target.value })} className="input mt-1.5" placeholder="barangay@example.com" /></label>
@@ -200,7 +228,7 @@ export default function BarangaysPage() {
               <label className="field-label">Portal color<input type="color" value={newBarangayForm.primary_color} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, primary_color: event.target.value })} className="input mt-1.5 h-11 p-1.5" /></label>
               <label className="field-label">Status<select value={newBarangayForm.is_active} onChange={(event) => setNewBarangayForm({ ...newBarangayForm, is_active: event.target.value })} className="input mt-1.5"><option value="1">Active</option><option value="0">Paused</option></select></label>
               <label className="field-label sm:col-span-2">Logo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setNewBarangayLogo(event.target.files?.[0] ?? null)} className="input mt-1.5 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-blue-700" /></label>
-              <div className="sm:col-span-2"><button type="submit" disabled={busy} className="btn btn-primary">Add barangay</button></div>
+              <div className="sm:col-span-2"><button type="submit" disabled={busy || possibleDuplicate} className="btn btn-primary">Add barangay</button></div>
             </form>
           </Card>
 

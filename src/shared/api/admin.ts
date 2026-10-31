@@ -81,6 +81,26 @@ export async function getAdminDashboard(): Promise<DataResponse<DashboardOvervie
   return response.data
 }
 
+export async function getPlatformDashboard(): Promise<DataResponse<PlatformDashboard>> {
+  const response = await apiClient.get<DataResponse<PlatformDashboard>>('/platform/dashboard')
+  return response.data
+}
+
+export async function getPlatformReports(): Promise<DataResponse<PlatformReports>> {
+  const response = await apiClient.get<DataResponse<PlatformReports>>('/platform/reports')
+  return response.data
+}
+
+export async function getPlatformSettings(): Promise<DataResponse<PlatformSettings>> {
+  const response = await apiClient.get<DataResponse<PlatformSettings>>('/platform/settings')
+  return response.data
+}
+
+export async function updatePlatformSettings(data: PlatformSettings): Promise<DataResponse<PlatformSettings>> {
+  const response = await apiClient.patch<DataResponse<PlatformSettings>>('/platform/settings', data)
+  return response.data
+}
+
 export async function getAdminDocumentRequests(): Promise<ListResponse<DocumentRequest>> {
   const response = await apiClient.get<ListResponse<DocumentRequest>>('/admin/document-requests')
   return response.data
@@ -113,6 +133,40 @@ export type BarangayWorkspace = {
   onboarding_reviewed_at: string | null
   onboarding_reviewed_by: number | null
   onboarding_reviewer?: { id: number; name: string } | null
+}
+
+export type PlatformDashboard = {
+  total_barangays: number
+  active_barangays: number
+  pending_onboarding: number
+  total_users: number
+  resident_count: number
+  total_requests: number
+  pending_requests: number
+  requests_this_month: number
+}
+
+export type PlatformReports = {
+  total_barangays: number
+  active_barangays: number
+  pending_onboarding: number
+  resident_registrations: number
+  resident_registrations_this_month: number
+  total_requests: number
+  closed_request_percent: number
+  requests_by_status: Array<{ status: string; total: number }>
+  monthly_requests: Array<{ month: string; total: number }>
+}
+
+export type PlatformSettings = {
+  portal_name: string
+  support_email: string
+  primary_color: string
+  welcome_message: string
+  allow_new_registrations: boolean
+  emergency_notices: boolean
+  public_announcements: boolean
+  email_verification: boolean
 }
 
 export async function getPlatformBarangays(): Promise<ListResponse<BarangayWorkspace>> {
