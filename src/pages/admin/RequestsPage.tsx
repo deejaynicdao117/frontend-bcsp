@@ -5,7 +5,7 @@ import RequestTable from '../../components/admin/RequestTable'
 import { Alert, Card, PageHeader, Spinner } from '../../components/ui'
 import { getAdminDocumentRequests } from '../../shared/api'
 
-const requestStatuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_pickup', 'released']
+const requestStatuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_pickup', 'released', 'archived']
 
 export default function RequestsPage() {
   const requestsQuery = useQuery({

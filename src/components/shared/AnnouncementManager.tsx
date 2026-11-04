@@ -39,6 +39,7 @@ const emptyForm: AnnouncementForm = {
 }
 
 export default function AnnouncementManager({ api }: { api: AnnouncementApi }) {
+  const { get: getAnnouncements } = api
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [form, setForm] = useState<AnnouncementForm>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -47,19 +48,19 @@ export default function AnnouncementManager({ api }: { api: AnnouncementApi }) {
   const [message, setMessage] = useState('')
 
   async function load() {
-    const response = await api.get()
+    const response = await getAnnouncements()
     setAnnouncements(response.data)
   }
 
   useEffect(() => {
     let active = true
-    api.get()
+    getAnnouncements()
       .then((response) => { if (active) setAnnouncements(response.data) })
       .catch((loadError: unknown) => {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load announcements.')
       })
     return () => { active = false }
-  }, [api.get])
+  }, [getAnnouncements])
 
   function resetForm() {
     setEditingId(null)

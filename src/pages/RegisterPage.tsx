@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, Building2, MailCheck, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   registerResident,
-  getBulacanBarangays,
+  getAvailableBarangays,
   resendRegistrationCode,
   verifyRegistrationCode,
 } from '../shared/api'
@@ -20,6 +20,7 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
   const [firstName, setFirstName] = useState('')
   const [middleName, setMiddleName] = useState('')
   const [sex, setSex] = useState('')
+  const [province, setProvince] = useState('Bulacan')
   const [barangayId, setBarangayId] = useState('')
   const [barangays, setBarangays] = useState<BarangayLocation[]>([])
   const [email, setEmail] = useState('')
@@ -32,12 +33,22 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const provinces = [...new Set(barangays.map((barangay) => barangay.province))].sort((a, b) => (
+    a === 'Bulacan' ? -1 : b === 'Bulacan' ? 1 : a.localeCompare(b)
+  ))
+  const provinceBarangays = barangays.filter((barangay) => barangay.province === province)
+  const selectedBarangay = barangays.find((barangay) => String(barangay.id) === barangayId)
 
   useEffect(() => {
     let active = true
-    getBulacanBarangays()
-      .then((locations) => { if (active) setBarangays(locations) })
-      .catch(() => { if (active) setError('Unable to load the Bulacan barangay list. Please refresh and try again.') })
+    getAvailableBarangays()
+      .then((locations) => {
+        if (!active) return
+        setBarangays(locations)
+        const availableProvinces = [...new Set(locations.map((location) => location.province))]
+        setProvince(availableProvinces.includes('Bulacan') ? 'Bulacan' : availableProvinces[0] ?? '')
+      })
+      .catch(() => { if (active) setError('Unable to load the barangay list. Please refresh and try again.') })
     return () => { active = false }
   }, [])
 
@@ -115,16 +126,19 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
   }
 
   return (
-    <main className="grid min-h-screen bg-white lg:grid-cols-[1fr_1fr]">
+    <main
+      className="barangay-portal grid min-h-screen bg-white lg:grid-cols-[1fr_1fr]"
+      style={{ '--barangay-primary': selectedBarangay?.primary_color ?? '#2563eb' } as CSSProperties}
+    >
       <section className="flex items-center justify-center px-6 py-12 sm:px-12 lg:px-16">
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-2.5">
-            <span style={{ backgroundColor: barangays.find((barangay) => String(barangay.id) === barangayId)?.primary_color ?? '#2563eb' }} className="grid size-10 place-items-center overflow-hidden rounded-lg text-white">
-              {barangays.find((barangay) => String(barangay.id) === barangayId)?.logo_url
-                ? <img src={barangays.find((barangay) => String(barangay.id) === barangayId)?.logo_url ?? ''} alt="Selected barangay logo" className="size-full bg-white object-contain" />
+            <span style={{ backgroundColor: selectedBarangay?.primary_color ?? '#2563eb' }} className="grid size-10 place-items-center overflow-hidden rounded-lg text-white">
+              {selectedBarangay?.logo_url
+                ? <img src={selectedBarangay.logo_url} alt="Selected barangay logo" className="size-full bg-white object-contain" />
                 : <Building2 size={20} strokeWidth={2} />}
             </span>
-            <div><p className="text-sm font-semibold text-slate-900">{barangays.find((barangay) => String(barangay.id) === barangayId)?.name ?? 'Barangay Citizen Services Portal'}</p><p className="text-xs text-slate-500">{barangays.find((barangay) => String(barangay.id) === barangayId)?.municipality ?? 'Bulacan'}</p></div>
+            <div><p className="text-sm font-semibold text-slate-900">{selectedBarangay?.name ?? 'Barangay Citizen Services Portal'}</p><p className="text-xs text-slate-500">{selectedBarangay ? `${selectedBarangay.municipality}, ${selectedBarangay.province}` : 'Bulacan'}</p></div>
           </div>
 
           <div className="mt-10">
@@ -187,16 +201,31 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
               </div>
 
               <label className="field-label">
-                Barangay in Bulacan
+                Province
+                <select
+                  className="input mt-1.5"
+                  value={province}
+                  onChange={(event) => { setProvince(event.target.value); setBarangayId('') }}
+                  required
+                  disabled={provinces.length === 0}
+                >
+                  {provinces.length === 0
+                    ? <option value="">Loading provinces…</option>
+                    : provinces.map((availableProvince) => <option key={availableProvince} value={availableProvince}>{availableProvince}</option>)}
+                </select>
+              </label>
+
+              <label className="field-label">
+                Barangay
                 <select
                   className="input mt-1.5"
                   value={barangayId}
                   onChange={(event) => setBarangayId(event.target.value)}
                   required
-                  disabled={barangays.length === 0}
+                  disabled={provinceBarangays.length === 0}
                 >
-                  <option value="" disabled>{barangays.length === 0 ? 'Loading barangays…' : 'Select your barangay'}</option>
-                  {barangays.map((barangay) => (
+                  <option value="" disabled>{provinceBarangays.length === 0 ? 'No available barangays' : 'Select your barangay'}</option>
+                  {provinceBarangays.map((barangay) => (
                     <option key={barangay.id} value={barangay.id}>{barangay.municipality} — {barangay.name}</option>
                   ))}
                 </select>
@@ -354,7 +383,7 @@ export default function RegisterPage({ onVerified }: RegisterPageProps) {
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.6) 1px, transparent 0)', backgroundSize: '28px 28px' }}
           aria-hidden="true"
         />
-        <div className="absolute -right-40 -bottom-48 size-[28rem] rounded-full bg-blue-700/25 blur-3xl" aria-hidden="true" />
+        <div className="absolute -right-40 -bottom-48 size-112 rounded-full bg-blue-700/25 blur-3xl" aria-hidden="true" />
         <div className="relative z-10 max-w-md">
           <p className="text-xs font-semibold tracking-wider text-blue-300 uppercase">Service. Trust. Community.</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight">A simpler way to connect with your barangay.</h2>

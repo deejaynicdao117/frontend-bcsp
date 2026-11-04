@@ -23,7 +23,7 @@ Copy `.env.example` to `.env` if you need to change anything, then restart `npm 
 | `VITE_API_PROXY` | `http://127.0.0.1:8000` | Where Vite forwards `/api` requests (server-side). Keep it on `localhost`. |
 | `VITE_API_URL` | *(unset → `/api`)* | Absolute API base for the built app. Only set this to call the API directly. |
 
-The browser always calls same-origin `/api`, so the app works on `localhost`, a LAN IP, or an HTTPS dev tunnel without CORS or mixed-content errors.
+The browser defaults to same-origin `/api`. Vite forwards that path during `npm run dev` and `npm run preview`; a deployed static host does **not** run this Vite proxy. In production, configure the web server/CDN to reverse-proxy `/api` to Laravel, or set `VITE_API_URL` to the HTTPS API base and configure backend CORS accordingly. Do not expose the API over plain HTTP from an HTTPS site.
 
 ## Structure
 
@@ -49,8 +49,9 @@ src/
 | URL | Page |
 | --- | --- |
 | `/login` | Sign in |
-| `/admin`, `/admin/users`, `/admin/requests`, `/admin/community`, `/admin/reports`, `/admin/notifications`, `/admin/profile` | Admin workspace |
-| `/staff`, `/staff/community` | Staff workspace |
-| `/resident`, `/resident/services` | Resident workspace |
+| `/platform`, `/platform/barangays`, `/platform/reports`, `/platform/settings` | Platform administration |
+| `/admin`, `/admin/users`, `/admin/requests`, `/admin/document-types`, `/admin/community`, `/admin/reports`, `/admin/notifications`, `/admin/profile` | Barangay admin workspace |
+| `/staff`, `/staff/announcements`, `/staff/community` | Staff workspace |
+| `/resident`, `/resident/profile`, `/resident/complaints`, `/resident/assistance`, `/resident/announcements`, `/resident/emergency-contacts`, `/resident/evacuation-centers` | Resident workspace |
 
-Role guards live in `src/App.tsx`; a wrong role or unknown URL redirects home.
+Role guards live in `src/routes/AppRoutes.tsx`; a wrong role or unknown URL redirects home. The backend independently enforces API roles.
