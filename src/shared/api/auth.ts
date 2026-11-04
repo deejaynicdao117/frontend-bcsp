@@ -26,8 +26,8 @@ export type BarangayLocation = {
   primary_color?: string
 }
 
-export async function getBulacanBarangays(): Promise<BarangayLocation[]> {
-  const response = await apiClient.get<{ data: BarangayLocation[] }>('/locations/bulacan/barangays')
+export async function getAvailableBarangays(): Promise<BarangayLocation[]> {
+  const response = await apiClient.get<{ data: BarangayLocation[] }>('/locations/barangays')
   return response.data.data
 }
 

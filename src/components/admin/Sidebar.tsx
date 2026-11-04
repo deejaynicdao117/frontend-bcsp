@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
   Bell,
-  Building2,
   X,
   Files,
   FileText,
@@ -14,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useSession } from '../../shared/session-context'
+import { BarangayLogo } from '../ui'
 
 type SidebarProps = {
   onLogout: () => void
@@ -57,9 +57,12 @@ export default function Sidebar({ onLogout, notificationCount, isOpen, onClose }
     >
       <div className="flex items-center gap-3 px-5 py-5 lg:px-6 lg:py-6">
         <span style={{ backgroundColor: session.user.barangay?.primary_color ?? '#2563eb' }} className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl text-white shadow-lg shadow-blue-950/40">
-          {session.user.barangay?.logo_url
-            ? <img src={session.user.barangay.logo_url} alt="" className="size-full bg-white object-contain" />
-            : <Building2 size={20} strokeWidth={1.9} />}
+          <BarangayLogo
+            src={session.user.barangay?.logo_url}
+            className="size-full bg-white object-contain"
+            fallbackClassName="text-white"
+            size={20}
+          />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold tracking-tight text-white">{session.user.barangay?.name ?? 'Barangay Portal'}</p>

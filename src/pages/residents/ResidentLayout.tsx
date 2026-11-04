@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Bell, Menu } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import ResidentSidebar from '../../components/resident/ResidentSidebar'
@@ -9,7 +10,10 @@ export default function ResidentLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#f3f6fb] lg:pl-68">
+    <main
+      className="barangay-portal min-h-screen w-full overflow-x-hidden bg-[#f3f6fb] lg:pl-68"
+      style={{ '--barangay-primary': session.user.barangay?.primary_color ?? '#2563eb' } as CSSProperties}
+    >
       <ResidentSidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} onLogout={onLogout} />
 
       <div className="min-h-screen min-w-0 flex-1">
@@ -44,7 +48,7 @@ export default function ResidentLayout() {
           </div>
         </header>
 
-        <div className="resident-theme mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 sm:py-8 lg:px-9">
+        <div className="resident-theme mx-auto max-w-360 space-y-7 px-3 py-5 sm:px-6 sm:py-8 lg:px-9">
           <div className="min-w-0">
             <Outlet />
           </div>

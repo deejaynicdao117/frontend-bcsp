@@ -135,6 +135,19 @@ export type BarangayWorkspace = {
   onboarding_reviewer?: { id: number; name: string } | null
 }
 
+export type PlatformBarangaysPage = ListResponse<BarangayWorkspace> & {
+  meta: { current_page: number; last_page: number; per_page: number; total: number }
+  status_counts: Record<BarangayWorkspace['onboarding_status'], number>
+}
+
+export type BarangayWorkspaceUser = {
+  id: number
+  name: string
+  email: string
+  role: 'admin' | 'staff'
+  created_at?: string
+}
+
 export type PlatformDashboard = {
   total_barangays: number
   active_barangays: number
@@ -169,8 +182,13 @@ export type PlatformSettings = {
   email_verification: boolean
 }
 
-export async function getPlatformBarangays(): Promise<ListResponse<BarangayWorkspace>> {
-  const response = await apiClient.get<ListResponse<BarangayWorkspace>>('/platform/barangays')
+export async function getPlatformBarangays(params: {
+  page?: number
+  search?: string
+  province?: string
+  status?: 'all' | BarangayWorkspace['onboarding_status']
+} = {}): Promise<PlatformBarangaysPage> {
+  const response = await apiClient.get<PlatformBarangaysPage>('/platform/barangays', { params })
   return response.data
 }
 
@@ -198,12 +216,28 @@ export async function reviewBarangayOnboarding(
 export async function createBarangayWorkspaceUser(
   barangayId: number,
   data: { name: string; email: string; password: string; role: 'admin' | 'staff' },
-): Promise<DataResponse<PortalUser>> {
-  const response = await apiClient.post<DataResponse<PortalUser>>(`/platform/barangays/${barangayId}/users`, data)
+): Promise<DataResponse<BarangayWorkspaceUser>> {
+  const response = await apiClient.post<DataResponse<BarangayWorkspaceUser>>(`/platform/barangays/${barangayId}/users`, data)
   return response.data
 }
 
-export async function importDefaultBarangayWorkspace(barangayId: number): Promise<{ message: string }> {
-  const response = await apiClient.post<{ message: string }>(`/platform/barangays/${barangayId}/import-default-workspace`)
+export async function getPlatformBarangayUsers(barangayId: number): Promise<ListResponse<BarangayWorkspaceUser>> {
+  const response = await apiClient.get<ListResponse<BarangayWorkspaceUser>>(`/platform/barangays/${barangayId}/users`)
   return response.data
+}
+
+export async function updateBarangayWorkspaceUser(
+  barangayId: number,
+  userId: number,
+  data: { name: string; email: string; role: 'admin' | 'staff'; password?: string },
+): Promise<DataResponse<BarangayWorkspaceUser>> {
+  const response = await apiClient.put<DataResponse<BarangayWorkspaceUser>>(
+    `/platform/barangays/${barangayId}/users/${userId}`,
+    data,
+  )
+  return response.data
+}
+
+export async function deleteBarangayWorkspaceUser(barangayId: number, userId: number): Promise<void> {
+  await apiClient.delete(`/platform/barangays/${barangayId}/users/${userId}`)
 }

@@ -9,7 +9,7 @@ import {
 import { useSession } from '../../shared/session-context'
 import type { DocumentRequest } from '../../shared/types'
 
-const statuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_pickup', 'released']
+const statuses = ['pending', 'under_review', 'approved', 'rejected', 'ready_for_pickup', 'released', 'archived']
 
 function statusLabel(status: string) {
   return ({ ready_for_pickup: 'Ready for pickup' } as Record<string, string>)[status] ?? status.replaceAll('_', ' ')
@@ -120,7 +120,7 @@ export default function StaffRequestsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="relative isolate overflow-hidden rounded-3xl border border-teal-900/10 bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-6 py-7 text-slate-900 shadow-sm shadow-teal-950/5 sm:px-8 sm:py-9">
+      <section className="staff-request-hero relative isolate overflow-hidden rounded-3xl border border-teal-900/10 bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-6 py-7 text-slate-900 shadow-sm shadow-teal-950/5 sm:px-8 sm:py-9">
         <div className="absolute -right-12 -top-24 -z-10 size-72 rounded-full bg-emerald-200/45 blur-3xl" />
         <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-xl">

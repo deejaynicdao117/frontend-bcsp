@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Megaphone, Send, ImagePlus, Camera } from 'lucide-react'
 import { Alert, Card, StatusBadge } from '../../components/ui'
 import ResidentPageHero from '../../components/resident/ResidentPageHero'
@@ -20,12 +20,24 @@ type Complaint = {
 }
 
 export default function ComplaintsPage() {
+  const fileInput = useRef<HTMLInputElement>(null)
+  const galleryInput = useRef<HTMLInputElement>(null)
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ subject: '', description: '', location: '', purok: '', photo: null })
+  const [form, setForm] = useState<{ subject: string; description: string; location: string; purok: string; photo: File | null }>({ subject: '', description: '', location: '', purok: '', photo: null })
+  const [photoPreview, setPhotoPreview] = useState('')
+
+  function selectPhoto(file: File | undefined) {
+    if (!file) return
+
+    setForm((current) => ({ ...current, photo: file }))
+    const reader = new FileReader()
+    reader.onload = () => setPhotoPreview(typeof reader.result === 'string' ? reader.result : '')
+    reader.readAsDataURL(file)
+  }
 
   async function loadComplaints() {
     const response = await residentCommunityApi.getComplaints<Complaint>()
@@ -69,6 +81,7 @@ export default function ComplaintsPage() {
 
       await residentCommunityApi.submitComplaint(formData)
       setForm({ subject: '', description: '', location: '', purok: '', photo: null })
+      setPhotoPreview('')
       await loadComplaints()
       setFeedback('Complaint sent. Staff will review it soon.')
     } catch (submitError) {
@@ -140,24 +153,10 @@ export default function ComplaintsPage() {
               Choose photo
             </button>
           </div>
-          <input ref={fileInput} type="file" accept="image/*" className="Qhidden" onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) {
-              const reader = new FileReader()
-              reader.onload = (e) => setForm({ ...form, photo: file })
-              reader.readAsDataURL(file)
-            }
-          }} />
-          <input ref={galleryInput} type="file" accept="image/png,image/jpeg,image/webp" className="Qhidden" onChange={(event) => {
-            const file = event.target.files?.[0]}
-            if (file) {
-              const reader = new FileReader()
-              reader.onload = (e) => setForm({ ...form, photo: file })
-              reader.readAsDataURL(file)
-            }
-          }} />
-          {form.photo && (
-            <img src={form.photo} alt="Preview" className="mt-2 max-w-full max-h-48 rounded-lg" />
+          <input ref={fileInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => selectPhoto(event.target.files?.[0])} />
+          <input ref={galleryInput} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => selectPhoto(event.target.files?.[0])} />
+          {photoPreview && (
+            <img src={photoPreview} alt="Selected complaint photo preview" className="mt-2 max-w-full max-h-48 rounded-lg" />
           )}
           <p className="text-xs text-slate-500 mt-1">Optional incident photo. PNG, JPG, or WebP up to 2 MB.</p>
 

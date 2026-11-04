@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -0.5rem, 0) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter {
+    animation: none;
+  }
+}
+
 @theme {
   --font-sans: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 }
@@ -18,15 +40,27 @@
     overscroll-behavior-y: none;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     min-width: 320px;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
     font-family: var(--font-sans);
-    background-color: var(--color-slate-50);
+    background:
+      radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 28%),
+      var(--color-slate-50);
     color: var(--color-slate-900);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(59, 130, 246, 0.18);
+    color: var(--color-slate-900);
   }
 
   img {
@@ -39,6 +73,11 @@
   textarea,
   button {
     font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.4);
+    outline-offset: 2px;
   }
 }
 
@@ -168,6 +207,31 @@
   }
 }
 
+.barangay-portal {
+  --color-blue-50: color-mix(in srgb, var(--barangay-primary) 7%, white);
+  --color-blue-100: color-mix(in srgb, var(--barangay-primary) 14%, white);
+  --color-blue-200: color-mix(in srgb, var(--barangay-primary) 28%, white);
+  --color-blue-300: color-mix(in srgb, var(--barangay-primary) 45%, white);
+  --color-blue-400: color-mix(in srgb, var(--barangay-primary) 68%, white);
+  --color-blue-500: color-mix(in srgb, var(--barangay-primary) 88%, white);
+  --color-blue-600: var(--barangay-primary);
+  --color-blue-700: color-mix(in srgb, var(--barangay-primary) 86%, black);
+  --color-blue-800: color-mix(in srgb, var(--barangay-primary) 72%, black);
+  --color-blue-900: color-mix(in srgb, var(--barangay-primary) 58%, black);
+  --color-blue-950: color-mix(in srgb, var(--barangay-primary) 44%, black);
+  --color-teal-50: var(--color-blue-50);
+  --color-teal-100: var(--color-blue-100);
+  --color-teal-200: var(--color-blue-200);
+  --color-teal-300: var(--color-blue-300);
+  --color-teal-400: var(--color-blue-400);
+  --color-teal-500: var(--color-blue-500);
+  --color-teal-600: var(--color-blue-600);
+  --color-teal-700: var(--color-blue-700);
+  --color-teal-800: var(--color-blue-800);
+  --color-teal-900: var(--color-blue-900);
+  --color-teal-950: var(--color-blue-950);
+}
+
 html[data-theme='dark'] {
   color-scheme: dark;
 }
@@ -183,6 +247,7 @@ html[data-theme='dark'] main.min-h-screen {
 
 html[data-theme='dark'] [class~='bg-white'],
 html[data-theme='dark'] [class~='bg-white/85'],
+html[data-theme='dark'] [class~='bg-white/80'],
 html[data-theme='dark'] [class~='bg-white/90'],
 html[data-theme='dark'] [class~='bg-white/95'] {
   background-color: #111b2b !important;
@@ -190,6 +255,12 @@ html[data-theme='dark'] [class~='bg-white/95'] {
 
 html[data-theme='dark'] [class~='bg-slate-50'] {
   background-color: #0b1220 !important;
+}
+
+html[data-theme='dark'] [class~='bg-slate-50/60'],
+html[data-theme='dark'] [class~='bg-slate-50/70'],
+html[data-theme='dark'] [class~='bg-slate-50/80'] {
+  background-color: #172235 !important;
 }
 
 html[data-theme='dark'] [class~='bg-slate-100'] {
@@ -232,6 +303,63 @@ html[data-theme='dark'] [class~='text-slate-400'] {
 
 html[data-theme='dark'] [class~='text-slate-300'] {
   color: #64748b !important;
+}
+
+html[data-theme='dark'] [class~='text-blue-600'],
+html[data-theme='dark'] [class~='text-blue-700'],
+html[data-theme='dark'] [class~='text-blue-800'],
+html[data-theme='dark'] [class~='text-indigo-600'],
+html[data-theme='dark'] [class~='text-indigo-700'],
+html[data-theme='dark'] [class~='text-indigo-800'] {
+  color: #93c5fd !important;
+}
+
+html[data-theme='dark'] [class~='text-teal-600'],
+html[data-theme='dark'] [class~='text-teal-700'],
+html[data-theme='dark'] [class~='text-teal-800'],
+html[data-theme='dark'] [class~='text-emerald-600'],
+html[data-theme='dark'] [class~='text-emerald-700'],
+html[data-theme='dark'] [class~='text-emerald-800'],
+html[data-theme='dark'] [class~='text-green-600'],
+html[data-theme='dark'] [class~='text-green-700'],
+html[data-theme='dark'] [class~='text-green-800'] {
+  color: #6ee7b7 !important;
+}
+
+html[data-theme='dark'] [class~='text-amber-600'],
+html[data-theme='dark'] [class~='text-amber-700'],
+html[data-theme='dark'] [class~='text-amber-800'],
+html[data-theme='dark'] [class~='text-yellow-600'],
+html[data-theme='dark'] [class~='text-yellow-700'],
+html[data-theme='dark'] [class~='text-yellow-800'],
+html[data-theme='dark'] [class~='text-orange-600'],
+html[data-theme='dark'] [class~='text-orange-700'],
+html[data-theme='dark'] [class~='text-orange-800'] {
+  color: #fcd34d !important;
+}
+
+html[data-theme='dark'] [class~='text-rose-600'],
+html[data-theme='dark'] [class~='text-rose-700'],
+html[data-theme='dark'] [class~='text-rose-800'],
+html[data-theme='dark'] [class~='text-red-600'],
+html[data-theme='dark'] [class~='text-red-700'],
+html[data-theme='dark'] [class~='text-red-800'],
+html[data-theme='dark'] [class~='text-pink-600'],
+html[data-theme='dark'] [class~='text-pink-700'],
+html[data-theme='dark'] [class~='text-pink-800'] {
+  color: #fda4af !important;
+}
+
+html[data-theme='dark'] [class~='text-violet-600'],
+html[data-theme='dark'] [class~='text-violet-700'],
+html[data-theme='dark'] [class~='text-violet-800'],
+html[data-theme='dark'] [class~='text-purple-600'],
+html[data-theme='dark'] [class~='text-purple-700'],
+html[data-theme='dark'] [class~='text-purple-800'],
+html[data-theme='dark'] [class~='text-fuchsia-600'],
+html[data-theme='dark'] [class~='text-fuchsia-700'],
+html[data-theme='dark'] [class~='text-fuchsia-800'] {
+  color: #d8b4fe !important;
 }
 
 html[data-theme='dark'] [class~='bg-blue-50'],
@@ -314,6 +442,18 @@ html[data-theme='dark'] .card-header {
   border-color: #263449 !important;
 }
 
+html[data-theme='dark'] .card-title {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='dark'] .card :is(h1, h2, h3, h4) {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='dark'] .card-subtitle {
+  color: #a9b7c9 !important;
+}
+
 html[data-theme='dark'] .input,
 html[data-theme='dark'] input,
 html[data-theme='dark'] select,
@@ -321,6 +461,12 @@ html[data-theme='dark'] textarea {
   border-color: #3b4b61;
   background-color: #111b2b;
   color: #e2e8f0;
+}
+
+html[data-theme='dark'] input[type='checkbox'],
+html[data-theme='dark'] input[type='radio'] {
+  accent-color: #60a5fa;
+  background-color: transparent;
 }
 
 html[data-theme='dark'] option {
@@ -352,4 +498,15 @@ html[data-theme='dark'] :where(input, select, textarea)::placeholder {
 
 html[data-theme='dark'] ::-webkit-calendar-picker-indicator {
   filter: invert(0.85);
+}
+
+html[data-theme='dark'] .staff-request-hero {
+  border-color: #263449 !important;
+  background-image: linear-gradient(135deg, #14273a, #111b2b 58%, #12302d) !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='dark'] .staff-request-hero [class~='bg-white/80'],
+html[data-theme='dark'] .staff-request-hero [class~='bg-white/90'] {
+  background-color: #1b2a40 !important;
 }

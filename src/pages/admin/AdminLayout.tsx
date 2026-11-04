@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, ChevronDown, Menu } from 'lucide-react'
 import Sidebar from '../../components/admin/Sidebar'
-import { Alert } from '../../components/ui'
+import { Alert, BarangayLogo } from '../../components/ui'
 import { getAdminNotifications } from '../../shared/api'
 import { useSession } from '../../shared/session-context'
 import type { PortalNotification } from '../../shared/types'
@@ -82,7 +83,10 @@ export default function AdminLayout() {
   )) ?? pageMeta[0]
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50 lg:pl-[17rem]">
+    <div
+      className="barangay-portal min-h-screen w-full overflow-x-hidden bg-slate-50 lg:pl-68"
+      style={{ '--barangay-primary': session.user.barangay?.primary_color ?? '#2563eb' } as CSSProperties}
+    >
       <Sidebar
         onLogout={onLogout}
         notificationCount={notifications.length}
@@ -105,7 +109,14 @@ export default function AdminLayout() {
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
-                {session.user.barangay?.logo_url && <img src={session.user.barangay.logo_url} alt="" className="size-6 rounded bg-white object-contain" />}
+                {session.user.barangay?.logo_url && (
+                  <BarangayLogo
+                    src={session.user.barangay.logo_url}
+                    className="size-6 rounded bg-white object-contain"
+                    fallbackClassName="text-slate-400"
+                    size={18}
+                  />
+                )}
                 <span className="truncate">{session.user.barangay?.name ?? 'Barangay administration'}</span>
               </div>
               <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
@@ -149,7 +160,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1440px] space-y-7 px-3 py-5 sm:px-6 lg:px-9 lg:py-8">
+        <main className="mx-auto max-w-360 space-y-7 px-3 py-5 sm:px-6 lg:px-9 lg:py-8">
           {notice && (
             <Alert tone="error" onDismiss={() => setNotice('')}>{notice}</Alert>
           )}
